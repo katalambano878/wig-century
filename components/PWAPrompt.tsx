@@ -53,19 +53,19 @@ export default function PWAPrompt() {
           <div className="px-6 pb-8">
             {/* App icon and info */}
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-lg flex-shrink-0 bg-stone-50 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-lg flex-shrink-0 bg-slate-50 flex items-center justify-center">
                 <img
                   src="/logo.png"
-                  alt="Luxury Loots GH"
+                  alt="Wig Century"
                   className="w-8 h-8 object-cover"
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-gray-900 text-lg truncate">Luxury Loots GH</h3>
+                <h3 className="font-bold text-gray-900 text-lg truncate">Wig Century</h3>
                 <p className="text-sm text-gray-500">Thrifted Tops · African Print · Accessories</p>
                 <div className="flex items-center gap-1 mt-1">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <i key={star} className="ri-star-fill text-amber-400 text-xs" />
+                    <i key={star} className="ri-star-fill text-blue-400 text-xs" />
                   ))}
                   <span className="text-xs text-gray-400 ml-1">Shopping</span>
                 </div>
@@ -83,8 +83,8 @@ export default function PWAPrompt() {
                   key={feature.label}
                   className="bg-gray-50 rounded-xl p-3 text-center"
                 >
-                  <div className="w-10 h-10 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i className={`${feature.icon} text-stone-700 text-lg`} />
+                  <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i className={`${feature.icon} text-slate-700 text-lg`} />
                   </div>
                   <span className="text-xs font-medium text-gray-600">{feature.label}</span>
                 </div>
@@ -94,7 +94,7 @@ export default function PWAPrompt() {
             {/* CTA */}
             <button
               onClick={handleInstall}
-              className="w-full bg-stone-700 hover:bg-stone-800 text-white py-4 px-6 rounded-2xl font-semibold text-base transition-all active:scale-[0.98] shadow-lg shadow-stone-700/20 flex items-center justify-center gap-2"
+              className="w-full bg-slate-700 hover:bg-slate-800 text-white py-4 px-6 rounded-2xl font-semibold text-base transition-all active:scale-[0.98] shadow-lg shadow-slate-700/20 flex items-center justify-center gap-2"
             >
               <i className="ri-download-2-line text-xl" />
               Add to Home Screen

@@ -2,16 +2,12 @@
 
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { useCMS } from '@/context/CMSContext';
 import { supabase } from '@/lib/supabase';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useRecaptcha } from '@/hooks/useRecaptcha';
 
 export default function ContactPage() {
   usePageTitle('Contact Us');
-  const { getSetting } = useCMS();
-  const contactPhone = getSetting('contact_phone') || '0535227192';
-  const contactAddress = getSetting('contact_address') || 'Obuasi, Ashanti Region, Ghana';
   const [pageContent, setPageContent] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -83,11 +79,11 @@ export default function ContactPage() {
   const faqs = [
     {
       question: 'What are your delivery times?',
-      answer: 'Standard delivery takes 2-5 business days within Ghana. Express delivery is available for Accra and Kumasi. We package all items — tops, African prints, watches, and sunglasses — with care.'
+      answer: 'Standard delivery times depend on your location and are shown at checkout. We package every order with care.'
     },
     {
       question: 'Do you offer international shipping?',
-      answer: 'Currently, we ship within Ghana only. We are based in Obuasi and deliver across the country. Place your order and we\'ll bring it to your door.'
+      answer: 'Shipping options and regions are shown at checkout. Place your order and we will keep you updated every step of the way.'
     },
     {
       question: 'What payment methods do you accept?',
@@ -99,9 +95,9 @@ export default function ContactPage() {
     <div className="min-h-screen bg-white">
 
       {/* ── HERO ─────────────────────────────────────────── */}
-      <section className="relative bg-stone-950 overflow-hidden" style={{ minHeight: '65vh' }}>
+      <section className="relative bg-slate-950 overflow-hidden" style={{ minHeight: '65vh' }}>
         <Image
-          src="/hero_watches_sunglasses.png"
+          src="/hero_salon.jpg"
           alt="Contact Us"
           fill
           className="object-cover object-center"
@@ -109,8 +105,8 @@ export default function ContactPage() {
           sizes="100vw"
           quality={82}
         />
-        <div className="absolute inset-0 bg-stone-950/75" />
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
+        <div className="absolute inset-0 bg-slate-950/75" />
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
 
         {/* Ghost letter */}
         <div
@@ -124,17 +120,17 @@ export default function ContactPage() {
           style={{ minHeight: '65vh' }}
         >
           <div className="flex items-center gap-4 mb-10">
-            <div className="w-10 h-px bg-amber-400" />
-            <span className="text-amber-400 text-[9px] font-black tracking-[0.55em] uppercase">Reach Out</span>
+            <div className="w-10 h-px bg-blue-400" />
+            <span className="text-blue-400 text-[9px] font-black tracking-[0.55em] uppercase">Reach Out</span>
           </div>
 
           <h1 className="font-serif italic leading-[0.92]">
             <span className="block text-white" style={{ fontSize: 'clamp(1.5rem, 3.5vw, 3rem)' }}>Get In</span>
-            <span className="block text-amber-400" style={{ fontSize: 'clamp(1.5rem, 3.5vw, 3rem)' }}>Touch</span>
+            <span className="block text-blue-400" style={{ fontSize: 'clamp(1.5rem, 3.5vw, 3rem)' }}>Touch</span>
             <span className="block text-white/40" style={{ fontSize: 'clamp(1.5rem, 3.5vw, 3rem)' }}>We&apos;re Here</span>
           </h1>
 
-          <p className="text-stone-400 text-sm font-light mt-10 max-w-xs leading-relaxed">
+          <p className="text-slate-400 text-sm font-light mt-10 max-w-xs leading-relaxed">
             Have a question about our collections or your order? We&apos;re here to help.
           </p>
         </div>
@@ -147,12 +143,12 @@ export default function ContactPage() {
 
             {/* ── FORM ──────────────────────────────────── */}
             <div>
-              <p className="text-[9px] font-black tracking-[0.5em] uppercase text-stone-300 mb-4">Send a Message</p>
-              <h2 className="font-serif text-3xl sm:text-4xl italic text-stone-900 mb-2 leading-tight">
+              <p className="text-[9px] font-black tracking-[0.5em] uppercase text-slate-300 mb-4">Send a Message</p>
+              <h2 className="font-serif text-3xl sm:text-4xl italic text-slate-900 mb-2 leading-tight">
                 We&apos;d Love to<br />
-                <span className="text-stone-400 font-light">Hear From You</span>
+                <span className="text-slate-400 font-light">Hear From You</span>
               </h2>
-              <p className="text-stone-400 text-sm font-light mb-10 leading-relaxed">
+              <p className="text-slate-400 text-sm font-light mb-10 leading-relaxed">
                 Fill out the form and we&apos;ll get back to you as soon as possible.
               </p>
 
@@ -161,8 +157,8 @@ export default function ContactPage() {
                 {/* Name + Email row */}
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div className="group">
-                    <label htmlFor="name" className="block text-[9px] font-black tracking-[0.4em] uppercase text-stone-400 mb-3">
-                      Full Name <span className="text-amber-500">*</span>
+                    <label htmlFor="name" className="block text-[9px] font-black tracking-[0.4em] uppercase text-slate-400 mb-3">
+                      Full Name <span className="text-blue-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -171,13 +167,13 @@ export default function ContactPage() {
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full pb-3 border-b border-stone-200 focus:border-stone-900 bg-transparent text-stone-900 text-sm outline-none transition-colors placeholder:text-stone-300"
+                      className="w-full pb-3 border-b border-slate-200 focus:border-slate-900 bg-transparent text-slate-900 text-sm outline-none transition-colors placeholder:text-slate-300"
                       placeholder="Your full name"
                     />
                   </div>
                   <div>
-                    <label htmlFor="email" className="block text-[9px] font-black tracking-[0.4em] uppercase text-stone-400 mb-3">
-                      Email <span className="text-amber-500">*</span>
+                    <label htmlFor="email" className="block text-[9px] font-black tracking-[0.4em] uppercase text-slate-400 mb-3">
+                      Email <span className="text-blue-500">*</span>
                     </label>
                     <input
                       type="email"
@@ -186,7 +182,7 @@ export default function ContactPage() {
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full pb-3 border-b border-stone-200 focus:border-stone-900 bg-transparent text-stone-900 text-sm outline-none transition-colors placeholder:text-stone-300"
+                      className="w-full pb-3 border-b border-slate-200 focus:border-slate-900 bg-transparent text-slate-900 text-sm outline-none transition-colors placeholder:text-slate-300"
                       placeholder="your@email.com"
                     />
                   </div>
@@ -195,7 +191,7 @@ export default function ContactPage() {
                 {/* Phone + Subject row */}
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="phone" className="block text-[9px] font-black tracking-[0.4em] uppercase text-stone-400 mb-3">
+                    <label htmlFor="phone" className="block text-[9px] font-black tracking-[0.4em] uppercase text-slate-400 mb-3">
                       Phone
                     </label>
                     <input
@@ -204,13 +200,13 @@ export default function ContactPage() {
                       name="phone"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full pb-3 border-b border-stone-200 focus:border-stone-900 bg-transparent text-stone-900 text-sm outline-none transition-colors placeholder:text-stone-300"
+                      className="w-full pb-3 border-b border-slate-200 focus:border-slate-900 bg-transparent text-slate-900 text-sm outline-none transition-colors placeholder:text-slate-300"
                       placeholder="+233 XX XXX XXXX"
                     />
                   </div>
                   <div>
-                    <label htmlFor="subject" className="block text-[9px] font-black tracking-[0.4em] uppercase text-stone-400 mb-3">
-                      Subject <span className="text-amber-500">*</span>
+                    <label htmlFor="subject" className="block text-[9px] font-black tracking-[0.4em] uppercase text-slate-400 mb-3">
+                      Subject <span className="text-blue-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -219,7 +215,7 @@ export default function ContactPage() {
                       required
                       value={formData.subject}
                       onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                      className="w-full pb-3 border-b border-stone-200 focus:border-stone-900 bg-transparent text-stone-900 text-sm outline-none transition-colors placeholder:text-stone-300"
+                      className="w-full pb-3 border-b border-slate-200 focus:border-slate-900 bg-transparent text-slate-900 text-sm outline-none transition-colors placeholder:text-slate-300"
                       placeholder="Order inquiry, product question…"
                     />
                   </div>
@@ -227,8 +223,8 @@ export default function ContactPage() {
 
                 {/* Message */}
                 <div>
-                  <label htmlFor="message" className="block text-[9px] font-black tracking-[0.4em] uppercase text-stone-400 mb-3">
-                    Message <span className="text-amber-500">*</span>
+                  <label htmlFor="message" className="block text-[9px] font-black tracking-[0.4em] uppercase text-slate-400 mb-3">
+                    Message <span className="text-blue-500">*</span>
                   </label>
                   <textarea
                     id="message"
@@ -238,32 +234,32 @@ export default function ContactPage() {
                     maxLength={500}
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="w-full pb-3 border-b border-stone-200 focus:border-stone-900 bg-transparent text-stone-900 text-sm outline-none transition-colors resize-none placeholder:text-stone-300"
+                    className="w-full pb-3 border-b border-slate-200 focus:border-slate-900 bg-transparent text-slate-900 text-sm outline-none transition-colors resize-none placeholder:text-slate-300"
                     placeholder="Tell us how we can help you…"
                   />
                   <div className="flex justify-end mt-1">
-                    <span className="text-[9px] text-stone-300 font-medium">{formData.message.length}/500</span>
+                    <span className="text-[9px] text-slate-300 font-medium">{formData.message.length}/500</span>
                   </div>
                 </div>
 
                 {/* Status messages */}
                 {submitStatus === 'success' && (
-                  <div className="flex items-center gap-3 bg-stone-50 border border-stone-200 text-stone-700 px-5 py-4 rounded-xl text-sm">
-                    <i className="ri-check-line text-lg text-stone-500" />
+                  <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 text-slate-700 px-5 py-4 rounded-xl text-sm">
+                    <i className="ri-check-line text-lg text-slate-500" />
                     Message sent! We&apos;ll respond within 24 hours.
                   </div>
                 )}
                 {submitStatus === 'error' && (
                   <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-xl text-sm">
                     <i className="ri-error-warning-line text-lg" />
-                    Failed to send. Please try again or contact us directly.
+                    Failed to send. Please try again in a moment.
                   </div>
                 )}
 
                 <button
                   type="submit"
                   disabled={isSubmitting || verifying}
-                  className="inline-flex items-center gap-3 bg-stone-900 hover:bg-stone-700 text-white px-10 py-4 rounded-xl font-bold text-xs tracking-[0.25em] uppercase transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  className="inline-flex items-center gap-3 bg-slate-900 hover:bg-slate-700 text-white px-10 py-4 rounded-xl font-bold text-xs tracking-[0.25em] uppercase transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {isSubmitting || verifying
                     ? (verifying ? 'Verifying…' : 'Sending…')
@@ -280,69 +276,31 @@ export default function ContactPage() {
 
               {/* FAQ */}
               <div>
-                <p className="text-[9px] font-black tracking-[0.5em] uppercase text-stone-300 mb-4">Common Questions</p>
-                <h2 className="font-serif text-3xl sm:text-4xl italic text-stone-900 mb-8 leading-tight">
+                <p className="text-[9px] font-black tracking-[0.5em] uppercase text-slate-300 mb-4">Common Questions</p>
+                <h2 className="font-serif text-3xl sm:text-4xl italic text-slate-900 mb-8 leading-tight">
                   Quick<br />
-                  <span className="text-stone-400 font-light">Answers</span>
+                  <span className="text-slate-400 font-light">Answers</span>
                 </h2>
 
-                <div className="divide-y divide-stone-100">
+                <div className="divide-y divide-slate-100">
                   {faqs.map((faq, i) => (
                     <div key={i}>
                       <button
                         onClick={() => setOpenFaq(openFaq === i ? null : i)}
                         className="w-full flex items-center justify-between py-5 text-left group cursor-pointer"
                       >
-                        <span className="text-sm font-semibold text-stone-800 group-hover:text-stone-900 pr-4 transition-colors">
+                        <span className="text-sm font-semibold text-slate-800 group-hover:text-slate-900 pr-4 transition-colors">
                           {faq.question}
                         </span>
-                        <i className={`flex-shrink-0 text-stone-400 transition-transform duration-200 ${openFaq === i ? 'ri-subtract-line rotate-0' : 'ri-add-line'}`} />
+                        <i className={`flex-shrink-0 text-slate-400 transition-transform duration-200 ${openFaq === i ? 'ri-subtract-line rotate-0' : 'ri-add-line'}`} />
                       </button>
                       {openFaq === i && (
-                        <p className="pb-5 text-stone-500 text-sm leading-relaxed">
+                        <p className="pb-5 text-slate-500 text-sm leading-relaxed">
                           {faq.answer}
                         </p>
                       )}
                     </div>
                   ))}
-                </div>
-              </div>
-
-              {/* Contact info card */}
-              <div className="bg-stone-950 rounded-2xl p-8 relative overflow-hidden">
-                <div
-                  aria-hidden="true"
-                  className="absolute -right-4 -bottom-6 font-serif italic text-white/[0.04] leading-none pointer-events-none select-none"
-                  style={{ fontSize: '8rem' }}
-                >?</div>
-
-                <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center mb-6">
-                  <i className="ri-customer-service-2-line text-xl text-amber-400" />
-                </div>
-                <p className="text-[9px] font-black tracking-[0.45em] uppercase text-amber-400 mb-2">Direct Line</p>
-                <h3 className="font-serif text-2xl italic text-white mb-4">Need Immediate Help?</h3>
-                <p className="text-stone-400 text-sm leading-relaxed mb-6">
-                  Our team reviews all messages and responds as soon as possible.
-                </p>
-
-                <div className="space-y-3">
-                  <a
-                    href={`tel:${contactPhone}`}
-                    className="flex items-center gap-3 text-stone-300 hover:text-white transition-colors group"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-white/5 group-hover:bg-white/10 flex items-center justify-center transition-colors flex-shrink-0">
-                      <i className="ri-phone-line text-amber-400 text-sm" />
-                    </div>
-                    <span className="text-sm font-medium">{contactPhone}</span>
-                  </a>
-                  {contactAddress && (
-                    <div className="flex items-start gap-3 text-stone-400">
-                      <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <i className="ri-map-pin-line text-amber-400 text-sm" />
-                      </div>
-                      <span className="text-sm leading-relaxed">{contactAddress}</span>
-                    </div>
-                  )}
                 </div>
               </div>
 

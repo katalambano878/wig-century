@@ -118,12 +118,12 @@ export default function ReturnConfirmationPage() {
             </div>
           </div>
 
-          <div className="mt-8 bg-amber-50 border border-amber-200 rounded-xl p-6">
+          <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
             <div className="flex items-start space-x-3">
-              <i className="ri-alert-line text-2xl text-amber-700 mt-0.5"></i>
+              <i className="ri-alert-line text-2xl text-blue-700 mt-0.5"></i>
               <div>
-                <p className="font-semibold text-amber-900 mb-2">Important Reminders</p>
-                <ul className="text-sm text-amber-800 space-y-1">
+                <p className="font-semibold text-blue-900 mb-2">Important Reminders</p>
+                <ul className="text-sm text-blue-800 space-y-1">
                   <li>• Return must be shipped within 7 days</li>
                   <li>• Items must be unused with original tags</li>
                   <li>• Keep your tracking number for reference</li>

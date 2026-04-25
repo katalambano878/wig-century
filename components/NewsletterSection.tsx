@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import Image from 'next/image';
 
 export default function NewsletterSection() {
   const [email, setEmail] = useState('');
@@ -12,7 +13,7 @@ export default function NewsletterSection() {
     setIsSubmitting(true);
     setSubmitStatus('idle');
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       setSubmitStatus('success');
       setEmail('');
     } catch {
@@ -23,113 +24,208 @@ export default function NewsletterSection() {
   };
 
   return (
-    <section className="py-6 md:py-8">
+    <section className="py-16 md:py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* ── Section heading above the card ─────────────────── */}
+        <div className="text-center mb-10 md:mb-14">
+          <span className="inline-flex items-center gap-2 text-slate-500 text-xs tracking-[0.35em] uppercase font-semibold mb-3">
+            <span className="w-5 h-[1px] bg-slate-400" />
+            Stay in the Loop
+            <span className="w-5 h-[1px] bg-slate-400" />
+          </span>
+          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-gray-900 leading-tight">
+            Join the{' '}
+            <span className="italic font-light text-slate-500">Wig Century</span>{' '}
+            List
+          </h2>
+        </div>
 
-        {/* Card container */}
-        <div className="relative bg-stone-950 rounded-3xl overflow-hidden px-6 sm:px-10 lg:px-16 py-8 md:py-10">
+        {/* ── Split editorial card ────────────────────────────── */}
+        <div className="relative bg-slate-950 rounded-[28px] overflow-hidden shadow-[0_24px_80px_-24px_rgba(0,0,0,0.35)]">
+          <div className="grid lg:grid-cols-2">
+            {/* ── LEFT: editorial image panel ─────────────────── */}
+            <div className="relative h-64 sm:h-80 lg:h-auto lg:min-h-[520px] overflow-hidden">
+              <Image
+                src="/hero_portrait.jpg"
+                alt="Wig Century member"
+                fill
+                className="object-cover object-center scale-105"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                quality={85}
+              />
 
-          {/* Decorative elements */}
-          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-400/20 to-transparent" />
-          <div className="absolute -top-32 -right-32 w-80 h-80 bg-amber-500/[0.04] rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-stone-800/50 rounded-full blur-3xl pointer-events-none" />
+              {/* Cinematic overlay stack */}
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-950/40 via-slate-950/10 to-slate-950/60" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent to-slate-950 lg:via-slate-950/0 lg:to-slate-950" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent lg:bg-none" />
 
-          {/* Film grain */}
-          <div
-            className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none"
-            style={{
-              backgroundImage:
-                'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
-            }}
-          />
-
-          <div className="relative z-10">
-            {/* Top: centered content */}
-            <div className="text-center max-w-2xl mx-auto mb-10">
-              {/* Eyebrow */}
-              <div className="inline-flex items-center gap-3 mb-6">
-                <span className="w-5 h-px bg-amber-400/60" />
-                <span className="text-amber-400/80 text-[9px] font-black tracking-[0.5em] uppercase">Stay in the Loop</span>
-                <span className="w-5 h-px bg-amber-400/60" />
+              {/* Floating 10% badge — small editorial seal */}
+              <div className="absolute top-6 left-6 md:top-8 md:left-8 z-10">
+                <div className="relative w-24 h-24 md:w-28 md:h-28 flex items-center justify-center rotate-[-8deg]">
+                  {/* Rotating ring label */}
+                  <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full animate-slow-spin">
+                    <defs>
+                      <path
+                        id="circlePath"
+                        d="M 50,50 m -36,0 a 36,36 0 1,1 72,0 a 36,36 0 1,1 -72,0"
+                      />
+                    </defs>
+                    <text className="fill-blue-400 text-[8px] tracking-[0.35em] font-bold uppercase">
+                      <textPath href="#circlePath">
+                        Members Only · Members Only ·
+                      </textPath>
+                    </text>
+                  </svg>
+                  {/* Inner stamp */}
+                  <div className="absolute inset-3 rounded-full border border-blue-400/40 flex flex-col items-center justify-center backdrop-blur-sm bg-slate-950/30">
+                    <span className="font-serif italic text-blue-400 text-2xl md:text-3xl leading-none">10%</span>
+                    <span className="text-blue-400/80 text-[8px] font-black tracking-[0.2em] uppercase mt-0.5">Off</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Heading */}
-              <h2 className="font-serif text-3xl sm:text-4xl md:text-[2.75rem] text-white leading-[1.15] tracking-tight mb-4">
-                Get Exclusive Drops &{' '}
-                <span className="italic font-light text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-500">
-                  10% Off
+              {/* Bottom-left caption */}
+              <div className="absolute bottom-5 left-6 md:bottom-6 md:left-8 z-10 flex items-center gap-2.5">
+                <span className="w-6 h-px bg-blue-400/70" />
+                <span className="text-blue-400/90 text-[9px] font-black tracking-[0.5em] uppercase">
+                  The Inner Circle
                 </span>
-              </h2>
-
-              <p className="text-stone-500 text-sm md:text-base font-light leading-relaxed max-w-md mx-auto">
-                Be first to know about new thrift finds, restocks and member-only deals. No spam — just style, straight to your inbox.
-              </p>
+              </div>
             </div>
 
-            {/* Form */}
-            {submitStatus === 'success' ? (
-              <div className="flex flex-col items-center gap-3 py-4">
-                <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-400/20 flex items-center justify-center">
-                  <i className="ri-checkbox-circle-fill text-amber-400 text-xl" />
-                </div>
-                <p className="text-white text-lg font-serif font-semibold">You're in!</p>
-                <p className="text-stone-500 text-sm">Check your inbox — your 10% code is on its way.</p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="max-w-lg mx-auto">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="relative flex-1">
-                    <i className="ri-mail-line absolute left-4 top-1/2 -translate-y-1/2 text-stone-600 text-sm" />
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      className="w-full pl-10 pr-4 py-3.5 bg-stone-900 border border-stone-800 rounded-xl text-white placeholder:text-stone-700 text-sm font-medium focus:outline-none focus:border-amber-400/50 focus:ring-1 focus:ring-amber-400/20 transition-all duration-300"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="group inline-flex items-center justify-center gap-2.5 bg-amber-500 hover:bg-amber-400 text-stone-950 px-7 py-3.5 rounded-xl font-black text-[11px] tracking-[0.25em] uppercase transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_0_24px_rgba(245,158,11,0.2)] whitespace-nowrap"
-                  >
-                    {isSubmitting ? (
-                      <><i className="ri-loader-4-line animate-spin text-sm" /> Joining…</>
-                    ) : (
-                      <>
-                        Subscribe
-                        <i className="ri-arrow-right-line text-xs group-hover:translate-x-0.5 transition-transform duration-200" />
-                      </>
-                    )}
-                  </button>
-                </div>
+            {/* ── RIGHT: form panel ───────────────────────────── */}
+            <div className="relative px-6 sm:px-10 lg:px-14 py-10 md:py-14 flex flex-col justify-center">
+              {/* Decorative glow */}
+              <div className="absolute -top-24 -right-24 w-72 h-72 bg-blue-500/[0.06] rounded-full blur-3xl pointer-events-none" />
 
-                {submitStatus === 'error' && (
-                  <p className="text-red-400 text-xs flex items-center justify-center gap-2 mt-3">
-                    <i className="ri-error-warning-line" /> Something went wrong. Please try again.
-                  </p>
-                )}
+              {/* Film grain */}
+              <div
+                className="absolute inset-0 opacity-[0.025] mix-blend-overlay pointer-events-none"
+                style={{
+                  backgroundImage:
+                    'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
+                }}
+              />
 
-                {/* Trust signals */}
-                <div className="flex items-center justify-center gap-6 mt-5">
-                  {[
-                    { icon: 'ri-mail-check-line', label: 'No spam, ever' },
-                    { icon: 'ri-lock-line', label: 'Unsubscribe anytime' },
-                    { icon: 'ri-gift-line', label: '10% off first order' },
-                  ].map(t => (
-                    <div key={t.label} className="flex items-center gap-1.5 text-stone-600 text-[10px]">
-                      <i className={`${t.icon} text-xs`} />
-                      <span className="font-medium tracking-wide">{t.label}</span>
+              <div className="relative z-10">
+                {submitStatus === 'success' ? (
+                  <div className="flex flex-col items-start gap-4 py-2 animate-[fadeIn_0.6s_ease]">
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400/20 to-blue-600/5 border border-blue-400/30 flex items-center justify-center">
+                      <i className="ri-checkbox-circle-fill text-blue-400 text-2xl" />
                     </div>
-                  ))}
-                </div>
-              </form>
-            )}
-          </div>
+                    <h3 className="font-serif text-white text-3xl md:text-4xl leading-tight">
+                      You&apos;re in.
+                    </h3>
+                    <p className="text-slate-400 text-sm leading-relaxed max-w-sm">
+                      Check your inbox — your <span className="text-blue-400 font-semibold">10% code</span> is on its way. Welcome to the Wig Century inner circle.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setSubmitStatus('idle')}
+                      className="mt-2 text-slate-500 hover:text-blue-400 text-[11px] font-black tracking-[0.3em] uppercase transition-colors"
+                    >
+                      <i className="ri-arrow-left-line mr-1" /> Back
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {/* Eyebrow */}
+                    <div className="inline-flex items-center gap-2.5 mb-5">
+                      <span className="w-5 h-px bg-blue-400/60" />
+                      <span className="text-blue-400/80 text-[9px] font-black tracking-[0.5em] uppercase">
+                        Newsletter
+                      </span>
+                    </div>
 
+                    {/* Heading */}
+                    <h3 className="font-serif text-white text-[2rem] sm:text-4xl md:text-[2.5rem] leading-[1.1] tracking-tight mb-5">
+                      Exclusive drops,{' '}
+                      <span className="italic font-light text-transparent bg-clip-text bg-gradient-to-r from-blue-200 via-blue-400 to-blue-600">
+                        delivered first.
+                      </span>
+                    </h3>
+
+                    <p className="text-slate-400 text-sm md:text-[15px] font-light leading-relaxed mb-8 max-w-md">
+                      Early access to new wig arrivals, restocks, and member-only prices — plus 10% off your first order. No spam, just hair inspiration.
+                    </p>
+
+                    {/* Form */}
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                      <div className="relative group">
+                        <i className="ri-mail-line absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-400 text-base transition-colors duration-300" />
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="you@example.com"
+                          className="w-full pl-12 pr-4 py-4 bg-slate-900/70 border border-slate-800 rounded-2xl text-white placeholder:text-slate-600 text-sm font-medium focus:outline-none focus:border-blue-400/60 focus:ring-2 focus:ring-blue-400/10 transition-all duration-300"
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="group relative w-full inline-flex items-center justify-center gap-3 bg-blue-500 text-slate-950 px-7 py-4 rounded-2xl font-black text-[11px] tracking-[0.3em] uppercase overflow-hidden transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_10px_40px_-10px_rgba(245,158,11,0.5)]"
+                      >
+                        {/* Hover fill */}
+                        <span className="absolute inset-0 bg-blue-400 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.76,0,0.24,1)]" />
+                        <span className="relative z-10 whitespace-nowrap">
+                          {isSubmitting ? (
+                            <span className="inline-flex items-center gap-2.5">
+                              <i className="ri-loader-4-line animate-spin text-sm" /> Joining…
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-2.5">
+                              Claim My 10% Off
+                              <i className="ri-arrow-right-up-line text-sm group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300" />
+                            </span>
+                          )}
+                        </span>
+                      </button>
+
+                      {submitStatus === 'error' && (
+                        <p className="text-red-400 text-xs flex items-center gap-2 pt-1">
+                          <i className="ri-error-warning-line" /> Something went wrong. Please try again.
+                        </p>
+                      )}
+                    </form>
+
+                    {/* Trust row */}
+                    <div className="mt-8 pt-6 border-t border-slate-800/70 grid grid-cols-3 gap-3">
+                      {[
+                        { icon: 'ri-shield-check-line', label: 'No spam, ever' },
+                        { icon: 'ri-lock-line', label: 'Unsubscribe anytime' },
+                        { icon: 'ri-gift-line', label: '10% first order' },
+                      ].map((t) => (
+                        <div key={t.label} className="flex flex-col items-center sm:flex-row sm:justify-start gap-1.5 sm:gap-2">
+                          <i className={`${t.icon} text-blue-400/70 text-base`} />
+                          <span className="text-slate-500 text-[10px] sm:text-[11px] text-center sm:text-left font-medium tracking-wide leading-tight">
+                            {t.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Footnote */}
+                    <p className="text-slate-600 text-[10px] font-light tracking-wide mt-6 leading-relaxed">
+                      By subscribing, you agree to receive marketing emails from Wig Century. You can unsubscribe at any time.
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Local keyframes */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(6px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </section>
   );
 }

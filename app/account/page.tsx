@@ -391,7 +391,7 @@ function AccountContent() {
                               </span>
                             )}
                             {option.status === 'unverified' && (
-                              <span className="text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-1 bg-amber-100 text-amber-700 rounded-full flex items-center gap-1">
+                              <span className="text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-1 bg-blue-100 text-blue-700 rounded-full flex items-center gap-1">
                                 <i className="ri-error-warning-fill"></i> <span className="hidden sm:inline">Verify</span>
                               </span>
                             )}

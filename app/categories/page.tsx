@@ -30,18 +30,18 @@ export default async function CategoriesPage() {
     <div className="min-h-screen bg-white">
 
       {/* ── HERO ─────────────────────────────────────────── */}
-      <section className="relative bg-stone-950 overflow-hidden" style={{ minHeight: '68vh' }}>
+      <section className="relative bg-slate-950 overflow-hidden" style={{ minHeight: '68vh' }}>
         <Image
-          src="/hero_african_print.png"
+          src="/hero_salon.jpg"
           alt="Shop by Category"
           fill
           className="object-cover object-center"
           priority
           sizes="100vw"
-          quality={80}
+          quality={82}
         />
-        <div className="absolute inset-0 bg-stone-950/72" />
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
+        <div className="absolute inset-0 bg-slate-950/75" />
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
 
         {/* Ghost letter */}
         <div
@@ -55,18 +55,18 @@ export default async function CategoriesPage() {
           style={{ minHeight: '68vh' }}
         >
           <div className="flex items-center gap-4 mb-10">
-            <div className="w-10 h-px bg-amber-400" />
-            <span className="text-amber-400 text-[9px] font-black tracking-[0.55em] uppercase">Collections</span>
+            <div className="w-10 h-px bg-blue-400" />
+            <span className="text-blue-400 text-[9px] font-black tracking-[0.55em] uppercase">Collections</span>
           </div>
 
           <h1 className="font-serif italic leading-[0.95] drop-shadow-xl">
             <span className="block text-white" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}>Shop by</span>
-            <span className="block text-amber-400 drop-shadow-md" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}>Category</span>
+            <span className="block text-blue-400 drop-shadow-md" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}>Category</span>
             <span className="block text-white/90 mt-2 font-medium" style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}>Find Your Style</span>
           </h1>
 
-          <p className="text-stone-100 text-base md:text-lg font-normal mt-8 max-w-sm leading-relaxed drop-shadow-md">
-            Thrifted tops, African print wears, watches, sunglasses and more.
+          <p className="text-slate-100 text-base md:text-lg font-normal mt-8 max-w-sm leading-relaxed drop-shadow-md">
+            Wigs, bundles, closures, hair care and styling essentials — all in one place.
           </p>
         </div>
       </section>
@@ -75,21 +75,21 @@ export default async function CategoriesPage() {
       <section className="py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-          <div className="flex items-end justify-between mb-12 pb-6 border-b border-stone-100">
+          <div className="flex items-end justify-between mb-12 pb-6 border-b border-slate-100">
             <div>
-              <p className="text-[9px] font-black tracking-[0.5em] uppercase text-stone-300 mb-2">Browse All</p>
-              <h2 className="font-serif text-4xl lg:text-5xl text-stone-900 italic">Our Collections</h2>
+              <p className="text-[9px] font-black tracking-[0.5em] uppercase text-slate-300 mb-2">Browse All</p>
+              <h2 className="font-serif text-4xl lg:text-5xl text-slate-900 italic">Our Collections</h2>
             </div>
             <Link
               href="/shop"
-              className="hidden sm:flex items-center gap-2 text-[10px] font-black tracking-[0.3em] uppercase text-stone-400 hover:text-stone-900 transition-colors"
+              className="hidden sm:flex items-center gap-2 text-[10px] font-black tracking-[0.3em] uppercase text-slate-400 hover:text-slate-900 transition-colors"
             >
               View All <i className="ri-arrow-right-line" />
             </Link>
           </div>
 
           {categories.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0.5 bg-stone-100">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0.5 bg-slate-100">
               {categories.map((category, i) => (
                 <Link
                   key={category.id}
@@ -105,7 +105,7 @@ export default async function CategoriesPage() {
                   />
 
                   {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-950/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent" />
 
                   {/* Index number */}
                   <div className="absolute top-5 left-5 text-[10px] font-black text-white/25 font-serif italic">
@@ -114,9 +114,9 @@ export default async function CategoriesPage() {
 
                   {/* Content */}
                   <div className="absolute bottom-0 left-0 right-0 p-6">
-                    <p className="text-[8px] font-black tracking-[0.5em] uppercase text-amber-400/70 mb-1.5">Collection</p>
+                    <p className="text-[8px] font-black tracking-[0.5em] uppercase text-blue-400/70 mb-1.5">Collection</p>
                     <h3 className="font-serif text-2xl italic text-white font-semibold mb-3">{category.name}</h3>
-                    <p className="text-stone-300 text-xs leading-relaxed line-clamp-2 mb-4 max-h-0 group-hover:max-h-12 overflow-hidden transition-all duration-500">
+                    <p className="text-slate-300 text-xs leading-relaxed line-clamp-2 mb-4 max-h-0 group-hover:max-h-12 overflow-hidden transition-all duration-500">
                       {category.description || 'Explore our exclusive collection in this category.'}
                     </p>
                     <div className="flex items-center gap-2 text-white text-[10px] font-bold tracking-[0.25em] uppercase">
@@ -129,22 +129,22 @@ export default async function CategoriesPage() {
             </div>
           ) : (
             <div className="text-center py-32">
-              <div className="w-20 h-20 rounded-2xl bg-stone-50 border border-stone-100 flex items-center justify-center mx-auto mb-6">
-                <i className="ri-inbox-line text-3xl text-stone-300" />
+              <div className="w-20 h-20 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mx-auto mb-6">
+                <i className="ri-inbox-line text-3xl text-slate-300" />
               </div>
-              <h3 className="font-serif text-3xl text-stone-900 italic mb-3">Nothing here yet</h3>
-              <p className="text-stone-400 text-sm">Categories will appear here once added.</p>
+              <h3 className="font-serif text-3xl text-slate-900 italic mb-3">Nothing here yet</h3>
+              <p className="text-slate-400 text-sm">Categories will appear here once added.</p>
             </div>
           )}
         </div>
       </section>
 
       {/* ── CTA ──────────────────────────────────────────── */}
-      <section className="bg-stone-950 py-20">
+      <section className="bg-slate-950 py-20">
         <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
             <div>
-              <p className="text-[9px] font-black tracking-[0.5em] uppercase text-amber-400 mb-4">Can&apos;t find it?</p>
+              <p className="text-[9px] font-black tracking-[0.5em] uppercase text-blue-400 mb-4">Can&apos;t find it?</p>
               <h2 className="font-serif text-4xl lg:text-5xl italic text-white leading-[1.05]">
                 Browse Everything<br />
                 <span className="text-white/20">At Once.</span>
@@ -153,13 +153,13 @@ export default async function CategoriesPage() {
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <Link
                 href="/shop"
-                className="inline-flex items-center justify-center gap-3 bg-white text-stone-900 px-8 py-4 rounded-xl font-bold text-xs tracking-[0.2em] uppercase hover:bg-amber-400 transition-colors"
+                className="inline-flex items-center justify-center gap-3 bg-white text-slate-900 px-8 py-4 rounded-xl font-bold text-xs tracking-[0.2em] uppercase hover:bg-blue-400 transition-colors"
               >
                 Search All Products <i className="ri-search-line" />
               </Link>
               <Link
                 href="/contact"
-                className="inline-flex items-center justify-center gap-3 border border-stone-700 text-stone-400 px-8 py-4 rounded-xl font-bold text-xs tracking-[0.2em] uppercase hover:border-stone-400 hover:text-white transition-colors"
+                className="inline-flex items-center justify-center gap-3 border border-slate-700 text-slate-400 px-8 py-4 rounded-xl font-bold text-xs tracking-[0.2em] uppercase hover:border-slate-400 hover:text-white transition-colors"
               >
                 Contact Us <i className="ri-customer-service-line" />
               </Link>

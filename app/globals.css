@@ -685,3 +685,14 @@ img {
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+@keyframes slowSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-slow-spin {
+  animation: slowSpin 14s linear infinite;
+  transform-origin: center;
+  will-change: transform;
+}

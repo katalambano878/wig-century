@@ -1,116 +1,135 @@
 "use client";
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCMS } from '@/context/CMSContext';
-
-function FooterSection({ title, children }: { title: string, children: React.ReactNode }) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <div className="border-b border-stone-800/50 lg:border-none last:border-0">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between py-4 text-left lg:py-0 lg:cursor-default lg:mb-6"
-      >
-        <h4 className="font-bold text-lg text-white">{title}</h4>
-        <i className={`ri-arrow-down-s-line text-stone-400 text-xl transition-transform duration-300 lg:hidden ${isOpen ? 'rotate-180' : ''}`}></i>
-      </button>
-      <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-96 pb-6' : 'max-h-0 lg:max-h-full lg:overflow-visible'}`}>
-        {children}
-      </div>
-    </div>
-  );
-}
 
 export default function Footer() {
   const { getSetting } = useCMS();
+  const siteName = getSetting('site_name') || 'Wig Century';
+  const siteTagline =
+    getSetting('site_tagline') || 'Premium wigs, bundles & hair care — made for every crown.';
 
-  const siteName = getSetting('site_name') || 'Luxury Loots GH';
-  const siteTagline = getSetting('site_tagline') || 'Thrifted Tops · African Print · Watches & Sunglasses';
-  const siteLogo = getSetting('site_logo') || '/logo.png';
+  const [showTop, setShowTop] = useState(false);
+  const year = new Date().getFullYear();
+
+  useEffect(() => {
+    const onScroll = () => setShowTop(window.scrollY > 600);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  const COLS: { title: string; links: { href: string; label: string }[] }[] = [
+    {
+      title: 'Shop',
+      links: [
+        { href: '/shop', label: 'All Products' },
+        { href: '/categories', label: 'Collections' },
+        { href: '/shop?sort=newest', label: 'New Arrivals' },
+        { href: '/shop?sale=true', label: 'On Sale' },
+      ],
+    },
+    {
+      title: 'Help',
+      links: [
+        { href: '/contact', label: 'Contact' },
+        { href: '/order-tracking', label: 'Track Order' },
+        { href: '/shipping', label: 'Shipping' },
+        { href: '/returns', label: 'Returns' },
+      ],
+    },
+    {
+      title: 'About',
+      links: [
+        { href: '/about', label: 'Our Story' },
+        { href: '/blog', label: 'Journal' },
+        { href: '/privacy', label: 'Privacy' },
+        { href: '/terms', label: 'Terms' },
+      ],
+    },
+  ];
 
   return (
-    <footer className="relative mt-12 z-0">
+    <footer className="relative mt-16 lg:mt-24 bg-slate-950 text-white overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-400/30 to-transparent" />
+      <div className="absolute -bottom-20 right-[-10%] w-[380px] h-[380px] bg-blue-500/[0.06] rounded-full blur-3xl pointer-events-none" />
 
-      {/* Footer Background Shape */}
-      <div className="absolute inset-0 bg-stone-950 -z-10 overflow-hidden">
-        {/* Decorative elements inside footer bg */}
-        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-stone-800 to-transparent opacity-30"></div>
-      </div>
-
-      <div className="text-white pt-16 pb-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-
-            {/* Brand Column */}
-            <div className="lg:col-span-1 space-y-6">
-              <Link href="/" className="inline-block group">
-                <img src={siteLogo} alt={siteName} className="h-8 w-auto object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-300" />
-              </Link>
-              <p className="text-stone-200/60 leading-relaxed text-sm">
-                {siteTagline}
-              </p>
-
-              <div className="flex flex-wrap gap-6 pt-4">
-                <a href="https://www.instagram.com/luxurylootsgh" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-stone-500 hover:text-white transition-transform hover:scale-110">
-                  <i className="ri-instagram-line text-2xl"></i>
-                </a>
-                <a href="https://www.tiktok.com/@adjoa.ae" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="text-stone-500 hover:text-white transition-transform hover:scale-110">
-                  <i className="ri-tiktok-line text-2xl"></i>
-                </a>
-                <a href="https://snapchat.com/add/adjoa.ae" target="_blank" rel="noopener noreferrer" aria-label="Snapchat" className="text-stone-500 hover:text-white transition-transform hover:scale-110">
-                  <i className="ri-snapchat-line text-2xl"></i>
-                </a>
-              </div>
-            </div>
-
-            {/* Links Sections */}
-            <div className="lg:col-span-3 grid md:grid-cols-3 gap-8 lg:gap-12 pl-0 lg:pl-12">
-
-              <div className="space-y-6">
-                <h4 className="font-serif text-xl font-bold text-white">Shop</h4>
-                <ul className="space-y-3 text-stone-100/60 text-sm">
-                  <li><Link href="/shop" className="hover:text-stone-300 transition-colors">All Products</Link></li>
-                  <li><Link href="/categories" className="hover:text-stone-300 transition-colors">Collections</Link></li>
-                  <li><Link href="/shop?sort=newest" className="hover:text-stone-300 transition-colors">New Arrivals</Link></li>
-                  <li><Link href="/shop?sort=bestsellers" className="hover:text-stone-300 transition-colors">Best Sellers</Link></li>
-                </ul>
-              </div>
-
-              <div className="space-y-6">
-                <h4 className="font-serif text-xl font-bold text-white">Support</h4>
-                <ul className="space-y-3 text-stone-100/60 text-sm">
-                  <li><Link href="/contact" className="hover:text-stone-300 transition-colors">Contact Us</Link></li>
-                  <li><Link href="/order-tracking" className="hover:text-stone-300 transition-colors">Track Order</Link></li>
-                  <li><Link href="/shipping" className="hover:text-stone-300 transition-colors">Shipping & Delivery</Link></li>
-                  <li><Link href="/returns" className="hover:text-stone-300 transition-colors">Returns & Exchange</Link></li>
-                </ul>
-              </div>
-
-              <div className="space-y-6">
-                <h4 className="font-serif text-xl font-bold text-white">Company</h4>
-                <ul className="space-y-3 text-stone-100/60 text-sm">
-                  <li><Link href="/about" className="hover:text-stone-300 transition-colors">Our Story</Link></li>
-                  <li><Link href="/privacy" className="hover:text-stone-300 transition-colors">Privacy Policy</Link></li>
-                  <li><Link href="/terms" className="hover:text-stone-300 transition-colors">Terms of Service</Link></li>
-                  <li><Link href="/admin" className="hover:text-stone-300 transition-colors">Admin Access</Link></li>
-                </ul>
-              </div>
-
-            </div>
+      <div className="relative max-w-6xl mx-auto px-5 sm:px-6 lg:px-8 pt-14 pb-8">
+        {/* Top row: brand + link columns */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-10 md:gap-8 pb-12">
+          {/* Brand */}
+          <div className="col-span-2 space-y-4">
+            <Link href="/" className="inline-block group">
+              <h3 className="font-serif text-2xl md:text-3xl tracking-tight group-hover:text-blue-300 transition-colors">
+                {siteName}
+              </h3>
+            </Link>
+            <p className="text-slate-400 text-sm leading-relaxed max-w-xs">{siteTagline}</p>
+            <p className="text-[11px] font-black tracking-[0.35em] uppercase text-blue-400/80">
+              Est. {year} · Accra, Ghana
+            </p>
           </div>
 
-          <div className="border-t border-stone-900/50 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-stone-500/40">
-            <p>&copy; {new Date().getFullYear()} {siteName}. All rights reserved.</p>
-            <div className="flex gap-4 opacity-40">
-              <i className="ri-visa-line text-2xl"></i>
-              <i className="ri-mastercard-line text-2xl"></i>
-              <i className="ri-paypal-line text-2xl"></i>
+          {/* Link columns */}
+          {COLS.map((col) => (
+            <div key={col.title}>
+              <h4 className="font-black text-[11px] tracking-[0.3em] uppercase text-white mb-4">
+                {col.title}
+              </h4>
+              <ul className="space-y-2.5 text-slate-400 text-sm">
+                {col.links.map((l) => (
+                  <li key={l.href}>
+                    <Link
+                      href={l.href}
+                      className="group inline-flex items-center gap-2 hover:text-white transition-colors"
+                    >
+                      <span className="w-0 h-px bg-blue-400 group-hover:w-3 transition-all duration-300" />
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
+          ))}
+        </div>
+
+        {/* Bottom strip */}
+        <div className="border-t border-slate-800/70 pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <p className="text-slate-500 text-xs">
+            &copy; {year} <span className="text-slate-300 font-semibold">{siteName}</span>. Made with
+            <i className="ri-heart-fill text-blue-400 mx-1" />
+            in Ghana.
+          </p>
+
+          <div className="flex items-center gap-2">
+            {['ri-visa-line', 'ri-mastercard-line', 'ri-paypal-line', 'ri-smartphone-line'].map(
+              (icon, i) => (
+                <div
+                  key={i}
+                  className="w-9 h-6 rounded-md bg-slate-900/60 border border-slate-800 flex items-center justify-center hover:border-blue-400/40 transition-colors"
+                >
+                  <i className={`${icon} text-slate-400 text-sm`} />
+                </div>
+              )
+            )}
           </div>
         </div>
       </div>
+
+      {/* Back-to-top */}
+      <button
+        onClick={scrollToTop}
+        aria-label="Back to top"
+        className={`fixed bottom-6 right-6 z-40 w-11 h-11 rounded-full bg-white text-slate-950 shadow-xl flex items-center justify-center transition-all duration-500 hover:bg-blue-500 hover:text-white hover:scale-110 ${
+          showTop
+            ? 'opacity-100 translate-y-0 pointer-events-auto'
+            : 'opacity-0 translate-y-4 pointer-events-none'
+        }`}
+      >
+        <i className="ri-arrow-up-line text-lg" />
+      </button>
     </footer>
   );
 }

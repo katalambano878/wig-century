@@ -207,8 +207,8 @@ export default function AdminCustomersPage() {
   }
 
   const statusColors: any = {
-    'New': 'bg-stone-100 text-stone-700',
-    'Active': 'bg-stone-100 text-stone-700',
+    'New': 'bg-slate-100 text-slate-700',
+    'Active': 'bg-slate-100 text-slate-700',
     'VIP': 'bg-purple-100 text-purple-700',
     'Inactive': 'bg-gray-100 text-gray-700'
   };
@@ -279,7 +279,7 @@ export default function AdminCustomersPage() {
           <h1 className="text-3xl font-bold text-gray-900">Customers</h1>
           <p className="text-gray-600 mt-1">Manage your customer base and relationships</p>
         </div>
-        <button className="bg-stone-700 hover:bg-stone-800 text-white px-6 py-3 rounded-lg font-semibold transition-colors whitespace-nowrap cursor-pointer">
+        <button className="bg-slate-700 hover:bg-slate-800 text-white px-6 py-3 rounded-lg font-semibold transition-colors whitespace-nowrap cursor-pointer">
           <i className="ri-download-line mr-2"></i>
           Export Customers
         </button>
@@ -292,7 +292,7 @@ export default function AdminCustomersPage() {
         </div>
         <div className="bg-white rounded-xl border-2 border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">New This Month</p>
-          <p className="text-2xl font-bold text-stone-700">{stats.newThisMonth}</p>
+          <p className="text-2xl font-bold text-slate-700">{stats.newThisMonth}</p>
         </div>
         <div className="bg-white rounded-xl border-2 border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">VIP Customers</p>
@@ -315,7 +315,7 @@ export default function AdminCustomersPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search by name, email, or phone..."
-                  className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-stone-500 text-sm"
+                  className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 text-sm"
                 />
               </div>
             </div>
@@ -324,7 +324,7 @@ export default function AdminCustomersPage() {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-4 py-3 pr-8 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-stone-500 font-medium cursor-pointer"
+                className="px-4 py-3 pr-8 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 font-medium cursor-pointer"
               >
                 <option>All Customers</option>
                 <option>New</option>
@@ -335,7 +335,7 @@ export default function AdminCustomersPage() {
               <select
                 value={sortOption}
                 onChange={(e) => setSortOption(e.target.value)}
-                className="px-4 py-3 pr-8 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-stone-500 font-medium cursor-pointer"
+                className="px-4 py-3 pr-8 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 font-medium cursor-pointer"
               >
                 <option>Sort by Join Date</option>
                 <option>Sort by Name</option>
@@ -347,12 +347,12 @@ export default function AdminCustomersPage() {
         </div>
 
         {selectedCustomers.length > 0 && (
-          <div className="p-4 bg-stone-50 border-b border-stone-200 flex items-center justify-between">
-            <p className="text-stone-800 font-semibold">
+          <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <p className="text-slate-800 font-semibold">
               {selectedCustomers.length} customer{selectedCustomers.length > 1 ? 's' : ''} selected
             </p>
             <div className="flex items-center space-x-2">
-              <button className="px-4 py-2 bg-stone-600 hover:bg-stone-700 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap cursor-pointer">
+              <button className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap cursor-pointer">
                 <i className="ri-mail-line mr-2"></i>
                 Send Email
               </button>
@@ -377,7 +377,7 @@ export default function AdminCustomersPage() {
                     type="checkbox"
                     checked={selectedCustomers.length === filteredCustomers.length && filteredCustomers.length > 0}
                     onChange={handleSelectAll}
-                    className="w-4 h-4 text-stone-700 border-gray-300 rounded focus:ring-stone-500 cursor-pointer"
+                    className="w-4 h-4 text-slate-700 border-gray-300 rounded focus:ring-slate-500 cursor-pointer"
                   />
                 </th>
                 <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700">Customer</th>
@@ -402,16 +402,16 @@ export default function AdminCustomersPage() {
                         type="checkbox"
                         checked={selectedCustomers.includes(customer.id)}
                         onChange={() => handleSelectCustomer(customer.id)}
-                        className="w-4 h-4 text-stone-700 border-gray-300 rounded focus:ring-stone-500 cursor-pointer"
+                        className="w-4 h-4 text-slate-700 border-gray-300 rounded focus:ring-slate-500 cursor-pointer"
                       />
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 flex items-center justify-center bg-stone-100 text-stone-700 rounded-full font-semibold">
+                        <div className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-700 rounded-full font-semibold">
                           {customer.avatar}
                         </div>
                         <div>
-                          <Link href={`/admin/customers/${customer.id}`} className="font-semibold text-gray-900 hover:text-stone-700 whitespace-nowrap">
+                          <Link href={`/admin/customers/${customer.id}`} className="font-semibold text-gray-900 hover:text-slate-700 whitespace-nowrap">
                             {customer.name}
                           </Link>
                           <p className="text-sm text-gray-500">Joined {customer.joined}</p>
@@ -423,7 +423,7 @@ export default function AdminCustomersPage() {
                       <p className="text-gray-600 text-sm">{customer.phone}</p>
                     </td>
                     <td className="py-4 px-4 font-semibold text-gray-900">{customer.orders}</td>
-                    <td className="py-4 px-4 font-semibold text-stone-700 whitespace-nowrap">GH₵ {customer.totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td className="py-4 px-4 font-semibold text-slate-700 whitespace-nowrap">GH₵ {customer.totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="py-4 px-4 text-gray-700 text-sm whitespace-nowrap">{customer.lastOrder}</td>
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-2">
@@ -441,11 +441,11 @@ export default function AdminCustomersPage() {
                       <div className="flex items-center space-x-2">
                         <Link
                           href={`/admin/customers/${customer.id}`}
-                          className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-stone-700 hover:bg-stone-50 rounded-lg transition-colors"
+                          className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
                         >
                           <i className="ri-eye-line text-lg"></i>
                         </Link>
-                        <button className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-stone-700 hover:bg-stone-50 rounded-lg transition-colors cursor-pointer">
+                        <button className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer">
                           <i className="ri-mail-line text-lg"></i>
                         </button>
                         <button className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer">

@@ -13,13 +13,13 @@ export default function FreeShippingBar({ currentAmount, threshold = 200 }: Free
   return (
     <div className={`rounded-lg p-4 mb-4 ${
       isQualified 
-        ? 'bg-gradient-to-r from-stone-500 to-teal-500 text-white' 
-        : 'bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200'
+        ? 'bg-gradient-to-r from-slate-500 to-teal-500 text-white' 
+        : 'bg-gradient-to-r from-blue-50 to-orange-50 border-2 border-blue-200'
     }`}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">
           <div className={`w-8 h-8 flex items-center justify-center rounded-full ${
-            isQualified ? 'bg-white/20' : 'bg-amber-500'
+            isQualified ? 'bg-white/20' : 'bg-blue-500'
           }`}>
             <i className={`ri-truck-line text-lg ${isQualified ? 'text-white' : 'text-white'}`}></i>
           </div>
@@ -32,7 +32,7 @@ export default function FreeShippingBar({ currentAmount, threshold = 200 }: Free
           </span>
         </div>
         {!isQualified && (
-          <span className="text-sm font-bold text-amber-600">
+          <span className="text-sm font-bold text-blue-600">
             {percentage.toFixed(0)}%
           </span>
         )}
@@ -46,7 +46,7 @@ export default function FreeShippingBar({ currentAmount, threshold = 200 }: Free
             className={`h-full transition-all duration-500 ${
               isQualified 
                 ? 'bg-white' 
-                : 'bg-gradient-to-r from-amber-500 to-orange-500'
+                : 'bg-gradient-to-r from-blue-500 to-orange-500'
             }`}
             style={{ width: `${percentage}%` }}
           />
@@ -54,7 +54,7 @@ export default function FreeShippingBar({ currentAmount, threshold = 200 }: Free
         
         {isQualified && (
           <div className="absolute right-0 top-1/2 -translate-y-1/2 -mr-1">
-            <div className="w-6 h-6 flex items-center justify-center bg-white rounded-full text-stone-600">
+            <div className="w-6 h-6 flex items-center justify-center bg-white rounded-full text-slate-600">
               <i className="ri-check-line text-lg font-bold"></i>
             </div>
           </div>

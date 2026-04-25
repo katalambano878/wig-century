@@ -253,24 +253,24 @@ export default function HelpCenterPage() {
               href="/returns"
               className="bg-white rounded-xl shadow-sm p-6 hover:shadow-lg transition-all text-center"
             >
-              <div className="w-16 h-16 flex items-center justify-center bg-purple-100 rounded-full mx-auto mb-4">
-                <i className="ri-arrow-left-right-line text-3xl text-purple-700"></i>
+              <div className="w-16 h-16 flex items-center justify-center bg-blue-100 rounded-full mx-auto mb-4">
+                <i className="ri-arrow-left-right-line text-3xl text-blue-700"></i>
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Start a Return</h3>
               <p className="text-gray-600 text-sm mb-4">Return or exchange your item</p>
-              <span className="text-purple-700 font-semibold whitespace-nowrap">Initiate Return →</span>
+              <span className="text-blue-700 font-semibold whitespace-nowrap">Initiate Return →</span>
             </Link>
 
             <Link
               href="/order-tracking"
               className="bg-white rounded-xl shadow-sm p-6 hover:shadow-lg transition-all text-center"
             >
-              <div className="w-16 h-16 flex items-center justify-center bg-amber-100 rounded-full mx-auto mb-4">
-                <i className="ri-map-pin-line text-3xl text-amber-700"></i>
+              <div className="w-16 h-16 flex items-center justify-center bg-blue-100 rounded-full mx-auto mb-4">
+                <i className="ri-map-pin-line text-3xl text-blue-700"></i>
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Track Order</h3>
               <p className="text-gray-600 text-sm mb-4">Check your order status</p>
-              <span className="text-amber-700 font-semibold whitespace-nowrap">Track Now →</span>
+              <span className="text-blue-700 font-semibold whitespace-nowrap">Track Now →</span>
             </Link>
           </div>
         </div>

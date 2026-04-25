@@ -14,62 +14,61 @@ import { getProductCardPricing } from '@/lib/pricing';
 
 const HERO_SLIDES = [
   {
-    image: '/hero_tops.png',
+    image: '/hero_trio.jpg',
     tag: 'New Arrivals',
     heading: (
       <>
         Fresh{' '}
-        <span className="italic font-light text-transparent bg-clip-text bg-gradient-to-r from-stone-200 to-stone-400">
-          Thrift Finds
+        <span className="italic font-light text-transparent bg-clip-text bg-gradient-to-r from-slate-200 to-slate-400">
+          Wig Drops
         </span>
       </>
     ),
-    subtext: "Discover our latest thrifted tops — unique styles, unbeatable prices, curated just for you.",
+    subtext: "Discover the latest wigs and bundles — on-trend styles, carefully chosen for you.",
     cta: { text: 'Shop Now', href: '/shop' },
     cta2: { text: 'View Collections', href: '/categories' },
-    position: 'object-center',
+    position: 'object-top',
   },
   {
-    image: '/hero_african_print.png',
-    tag: 'African Print',
+    image: '/hero_ombre.jpg',
+    tag: 'Textures & Lengths',
     heading: (
       <>
-        Bold{' '}
-        <span className="italic font-light text-transparent bg-clip-text bg-gradient-to-r from-rose-200 to-rose-400">
-          African Style
+        Find Your{' '}
+        <span className="italic font-light text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-blue-400">
+          Perfect Fit
         </span>
       </>
     ),
-    subtext: "Vibrant African print wears made for the modern Ghanaian woman. Stand out, every single day.",
-    cta: { text: 'Shop Prints', href: '/shop?category=african-print' },
+    subtext: "From sleek bobs to long layers — explore lengths, textures, and caps that suit your look.",
+    cta: { text: 'Shop Wigs', href: '/shop' },
     cta2: { text: 'Our Story', href: '/about' },
     position: 'object-top',
   },
   {
-    image: '/hero_watches_sunglasses.png',
-    tag: 'Accessories',
+    image: '/hero_salon.jpg',
+    tag: 'Care & Finish',
     heading: (
       <>
-        Watches &{' '}
-        <span className="italic font-light text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-400">
-          Sunglasses
+        Care That{' '}
+        <span className="italic font-light text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-blue-400">
+          Completes
         </span>
       </>
     ),
-    subtext: "Elevate every outfit with our handpicked watches and sunglasses. Style that speaks.",
-    cta: { text: 'Shop Accessories', href: '/shop?category=accessories' },
-    cta2: { text: 'Contact Us', href: '/contact' },
+    subtext: "Keep every install looking its best with essentials picked to pair with your purchase.",
+    cta: { text: 'Shop All', href: '/shop' },
+    cta2: { text: 'Message Us', href: '/contact' },
     position: 'object-center',
   },
 ];
 
 const TICKER_ITEMS = [
-  'Thrifted Tops',
-  'African Print Wears',
-  'Watches',
-  'Sunglasses',
+  'Premium Wigs',
+  'Bundles & Closures',
+  'Lace Front & Glueless',
   'New Arrivals Weekly',
-  'Obuasi, Ghana',
+  'Human & Blend Options',
   'Free Shipping over GH₵ 300',
   'Secure Mobile Money Payments',
 ];
@@ -88,7 +87,7 @@ const TRUST_FEATURES = [
   {
     icon: 'ri-hand-heart-line',
     title: 'Curated Quality',
-    desc: 'Every piece hand-picked & inspected',
+    desc: 'Wigs and hair essentials chosen with care',
   },
   {
     icon: 'ri-arrow-go-back-line',
@@ -104,15 +103,13 @@ export default function Home() {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
-    if (isPaused) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, [isPaused]);
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
@@ -153,11 +150,7 @@ export default function Home() {
     <main className="min-h-screen bg-white">
 
       {/* ─── HERO SLIDER ──────────────────────────────────────────────── */}
-      <section
-        className="relative w-full h-[88vh] md:h-screen overflow-hidden bg-black"
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
-      >
+      <section className="relative w-full h-[88vh] md:h-screen overflow-hidden bg-black">
         {/* Slide progress bar */}
         <div className="absolute top-0 inset-x-0 z-50 h-[2px] bg-white/10">
           <div
@@ -179,7 +172,7 @@ export default function Home() {
             <div className={`absolute inset-0 ${index === currentSlide ? 'animate-ken-burns' : ''}`}>
               <Image
                 src={slide.image}
-                alt={`Luxury Loots GH — ${slide.tag}`}
+                alt={`Wig Century — ${slide.tag}`}
                 fill
                 className={`object-cover ${slide.position}`}
                 priority={index === 0}
@@ -308,25 +301,25 @@ export default function Home() {
       </section>
 
       {/* ─── SCROLLING TICKER ────────────────────────────────────────────── */}
-      <div className="bg-stone-950 border-y border-stone-800 py-3 overflow-hidden select-none">
+      <div className="bg-slate-950 border-y border-slate-800 py-3 overflow-hidden select-none">
         <div className="flex animate-marquee whitespace-nowrap">
           {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-            <span key={i} className="inline-flex items-center mx-8 text-stone-400 text-xs tracking-[0.3em] uppercase font-medium">
+            <span key={i} className="inline-flex items-center mx-8 text-slate-400 text-xs tracking-[0.3em] uppercase font-medium">
               {item}
-              <span className="ml-8 w-1 h-1 rounded-full bg-stone-600 inline-block" />
+              <span className="ml-8 w-1 h-1 rounded-full bg-slate-600 inline-block" />
             </span>
           ))}
         </div>
       </div>
 
       {/* ─── TRUST FEATURES STRIP ─────────────────────────────────────────── */}
-      <section className="bg-white border-b border-stone-100">
+      <section className="bg-white border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-stone-100">
+          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-slate-100">
             {TRUST_FEATURES.map((f) => (
               <div key={f.title} className="flex flex-col sm:flex-row items-center sm:items-start gap-3 px-6 py-6 text-center sm:text-left">
-                <div className="flex-shrink-0 w-10 h-10 bg-stone-50 rounded-full flex items-center justify-center">
-                  <i className={`${f.icon} text-xl text-stone-700`} />
+                <div className="flex-shrink-0 w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center">
+                  <i className={`${f.icon} text-xl text-slate-700`} />
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900 text-sm leading-tight">{f.title}</p>
@@ -344,8 +337,8 @@ export default function Home() {
 
           <AnimatedSection className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <div>
-              <span className="inline-flex items-center gap-2 text-stone-500 text-xs tracking-[0.35em] uppercase font-semibold mb-3">
-                <span className="w-5 h-[1px] bg-stone-400 inline-block" />
+              <span className="inline-flex items-center gap-2 text-slate-500 text-xs tracking-[0.35em] uppercase font-semibold mb-3">
+                <span className="w-5 h-[1px] bg-slate-400 inline-block" />
                 Collections
               </span>
               <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-gray-900 leading-tight">
@@ -354,7 +347,7 @@ export default function Home() {
             </div>
             <Link
               href="/categories"
-              className="hidden md:inline-flex items-center gap-2 text-sm font-semibold text-stone-700 border border-stone-200 px-6 py-3 rounded-full hover:bg-stone-900 hover:text-white hover:border-stone-900 transition-all duration-300 whitespace-nowrap"
+              className="hidden md:inline-flex items-center gap-2 text-sm font-semibold text-slate-700 border border-slate-200 px-6 py-3 rounded-full hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all duration-300 whitespace-nowrap"
             >
               All Categories
               <i className="ri-arrow-right-line" />
@@ -398,34 +391,18 @@ export default function Home() {
                 </Link>
               ))}
             </AnimatedGrid>
-          ) : (
-            /* Fallback static category cards when DB has none */
-            <AnimatedGrid className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
-              {[
-                { name: 'Thrifted Tops', slug: 'tops', color: 'from-stone-700 to-stone-900' },
-                { name: 'African Print', slug: 'african-print', color: 'from-rose-700 to-rose-900' },
-                { name: 'Watches', slug: 'watches', color: 'from-amber-700 to-amber-900' },
-                { name: 'Sunglasses', slug: 'sunglasses', color: 'from-violet-700 to-violet-900' },
-              ].map((cat) => (
-                <Link href={`/shop?category=${cat.slug}`} key={cat.slug} className="group block relative">
-                  <div className={`aspect-[3/4] rounded-2xl overflow-hidden relative bg-gradient-to-br ${cat.color} shadow-sm group-hover:shadow-2xl group-hover:-translate-y-2 transition-all duration-700`}>
-                    <div className="absolute inset-0 p-7 flex flex-col justify-end">
-                      <h3 className="font-serif text-white text-2xl md:text-3xl tracking-wide">{cat.name}</h3>
-                      <div className="flex items-center gap-2 text-white/70 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                        <span className="text-[11px] font-bold tracking-[0.2em] uppercase">Explore</span>
-                        <i className="ri-arrow-right-line text-sm" />
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </AnimatedGrid>
-          )}
+          ) : !loading ? (
+            <div className="text-center py-16 text-gray-400 border border-dashed border-slate-200 rounded-2xl">
+              <i className="ri-grid-line text-5xl mb-4 block opacity-30" />
+              <p className="text-lg text-gray-500">Categories coming soon.</p>
+              <p className="text-sm text-gray-400 mt-1">Check back shortly for our latest collections.</p>
+            </div>
+          ) : null}
 
           <div className="mt-10 text-center md:hidden">
             <Link
               href="/categories"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-stone-700 border border-stone-200 px-6 py-3 rounded-full"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 border border-slate-200 px-6 py-3 rounded-full"
             >
               All Categories <i className="ri-arrow-right-line" />
             </Link>
@@ -434,25 +411,25 @@ export default function Home() {
       </section>
 
       {/* ─── FEATURED PRODUCTS ─────────────────────────────────────────────── */}
-      <section className="py-16 md:py-24 bg-stone-50">
+      <section className="py-16 md:py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           <AnimatedSection className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
             <div>
-              <span className="inline-flex items-center gap-2 text-stone-500 text-xs tracking-[0.35em] uppercase font-semibold mb-3">
-                <span className="w-5 h-[1px] bg-stone-400 inline-block" />
+              <span className="inline-flex items-center gap-2 text-slate-500 text-xs tracking-[0.35em] uppercase font-semibold mb-3">
+                <span className="w-5 h-[1px] bg-slate-400 inline-block" />
                 Handpicked
               </span>
               <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-gray-900 leading-tight">
                 Featured Products
               </h2>
               <p className="text-gray-500 mt-3 text-base max-w-sm leading-relaxed">
-                Top picks from our latest thrift drops and African print arrivals.
+                Top picks from our latest wig drops and hair care arrivals.
               </p>
             </div>
             <Link
               href="/shop"
-              className="hidden md:inline-flex items-center gap-2 text-sm font-semibold text-stone-700 border border-stone-200 px-6 py-3 rounded-full hover:bg-stone-900 hover:text-white hover:border-stone-900 transition-all duration-300 whitespace-nowrap"
+              className="hidden md:inline-flex items-center gap-2 text-sm font-semibold text-slate-700 border border-slate-200 px-6 py-3 rounded-full hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all duration-300 whitespace-nowrap"
             >
               View All Products
               <i className="ri-arrow-right-line" />
@@ -521,7 +498,7 @@ export default function Home() {
           <div className="text-center mt-12 md:hidden">
             <Link
               href="/shop"
-              className="inline-flex items-center gap-2 bg-stone-900 text-white px-8 py-4 rounded-full font-semibold text-sm hover:bg-stone-800 transition-colors"
+              className="inline-flex items-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-full font-semibold text-sm hover:bg-slate-800 transition-colors"
             >
               View All Products <i className="ri-arrow-right-line" />
             </Link>
@@ -533,13 +510,13 @@ export default function Home() {
       <section className="py-16 md:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection className="text-center mb-14">
-            <span className="inline-flex items-center gap-2 text-stone-500 text-xs tracking-[0.35em] uppercase font-semibold mb-4">
-              <span className="w-5 h-[1px] bg-stone-400" />
-              Why Luxury Loots GH
-              <span className="w-5 h-[1px] bg-stone-400" />
+            <span className="inline-flex items-center gap-2 text-slate-500 text-xs tracking-[0.35em] uppercase font-semibold mb-4">
+              <span className="w-5 h-[1px] bg-slate-400" />
+              Why Wig Century
+              <span className="w-5 h-[1px] bg-slate-400" />
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-gray-900">
-              The Luxury Loots Difference
+              The Wig Century Standard
             </h2>
           </AnimatedSection>
 
@@ -548,38 +525,38 @@ export default function Home() {
               {
                 icon: 'ri-price-tag-3-line',
                 title: 'Unbeatable Prices',
-                desc: 'Premium thrift finds and African print fashion at prices that won\'t break the bank. Quality without compromise.',
+                desc: 'Premium wigs and hair at prices that respect your budget — without cutting corners on quality.',
                 highlight: 'Best Value',
               },
               {
                 icon: 'ri-sparkle-line',
                 title: 'Curated by Hand',
-                desc: 'Every single item in our store is personally selected and inspected. No junk — only pieces worth wearing.',
+                desc: 'Every piece is selected and checked so you receive styles that look and feel worth it.',
                 highlight: 'Hand-Picked',
               },
               {
-                icon: 'ri-map-pin-line',
-                title: 'Rooted in Obuasi',
-                desc: 'We\'re a local business serving Ghana. Shop with us and support fashion that\'s close to home.',
-                highlight: 'Local Love',
+                icon: 'ri-truck-line',
+                title: 'Reliable Fulfillment',
+                desc: 'Straightforward shipping and tracking so you know when your order is on the way.',
+                highlight: 'Trusted',
               },
             ].map((item) => (
               <div
                 key={item.title}
-                className="group relative bg-stone-50 hover:bg-stone-900 rounded-2xl p-8 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 overflow-hidden"
+                className="group relative bg-slate-50 hover:bg-slate-900 rounded-2xl p-8 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 overflow-hidden"
               >
                 <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                  <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-stone-400 bg-stone-800 px-2 py-1 rounded-full">
+                  <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-slate-400 bg-slate-800 px-2 py-1 rounded-full">
                     {item.highlight}
                   </span>
                 </div>
-                <div className="w-12 h-12 bg-white group-hover:bg-stone-800 rounded-xl flex items-center justify-center mb-5 shadow-sm transition-colors duration-500">
-                  <i className={`${item.icon} text-2xl text-stone-700 group-hover:text-stone-200 transition-colors duration-500`}></i>
+                <div className="w-12 h-12 bg-white group-hover:bg-slate-800 rounded-xl flex items-center justify-center mb-5 shadow-sm transition-colors duration-500">
+                  <i className={`${item.icon} text-2xl text-slate-700 group-hover:text-slate-200 transition-colors duration-500`}></i>
                 </div>
                 <h3 className="font-semibold text-gray-900 group-hover:text-white text-lg mb-2 transition-colors duration-500">
                   {item.title}
                 </h3>
-                <p className="text-gray-500 group-hover:text-stone-400 text-sm leading-relaxed transition-colors duration-500">
+                <p className="text-gray-500 group-hover:text-slate-400 text-sm leading-relaxed transition-colors duration-500">
                   {item.desc}
                 </p>
               </div>

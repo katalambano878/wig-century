@@ -45,7 +45,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-950 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
 
       {/* Background grid pattern */}
       <div className="absolute inset-0 opacity-[0.03]" style={{
@@ -54,27 +54,27 @@ export default function AdminLoginPage() {
       }} />
 
       {/* Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/[0.04] rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/[0.04] rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative w-full max-w-sm">
 
         {/* Logo / brand */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-stone-900 border border-stone-800 mb-5">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 mb-5">
             <Link href="/">
-              <img src="/logo.png" alt="Luxury Loots GH" className="h-8 w-8 rounded-xl object-cover" />
+              <img src="/logo.png" alt="Wig Century" className="h-8 w-8 rounded-xl object-cover" />
             </Link>
           </div>
           <div className="flex items-center justify-center gap-3 mb-1">
-            <div className="w-6 h-px bg-amber-400/50" />
-            <span className="text-amber-400 text-[9px] font-black tracking-[0.55em] uppercase">Admin Access</span>
-            <div className="w-6 h-px bg-amber-400/50" />
+            <div className="w-6 h-px bg-blue-400/50" />
+            <span className="text-blue-400 text-[9px] font-black tracking-[0.55em] uppercase">Admin Access</span>
+            <div className="w-6 h-px bg-blue-400/50" />
           </div>
           <h1 className="font-serif italic text-2xl text-white mt-3">Command Centre</h1>
         </div>
 
         {/* Card */}
-        <div className="bg-stone-900 border border-stone-800 rounded-2xl p-8">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
 
           {error && (
             <div className="mb-6 flex items-start gap-3 bg-red-950/50 border border-red-900/50 rounded-xl px-4 py-3">
@@ -90,17 +90,17 @@ export default function AdminLoginPage() {
 
             {/* Email */}
             <div>
-              <label className="block text-[9px] font-black tracking-[0.45em] uppercase text-stone-500 mb-3">
+              <label className="block text-[9px] font-black tracking-[0.45em] uppercase text-slate-500 mb-3">
                 Email Address
               </label>
               <div className="relative">
-                <i className="ri-mail-line absolute left-4 top-1/2 -translate-y-1/2 text-stone-600 text-sm" />
+                <i className="ri-mail-line absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 text-sm" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-stone-950 border border-stone-800 rounded-xl text-white text-sm placeholder:text-stone-700 focus:outline-none focus:border-amber-500/50 transition-colors"
-                  placeholder="admin@adjoa.com"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm placeholder:text-slate-700 focus:outline-none focus:border-blue-500/50 transition-colors"
+                  placeholder="admin@example.com"
                   required
                 />
               </div>
@@ -108,23 +108,23 @@ export default function AdminLoginPage() {
 
             {/* Password */}
             <div>
-              <label className="block text-[9px] font-black tracking-[0.45em] uppercase text-stone-500 mb-3">
+              <label className="block text-[9px] font-black tracking-[0.45em] uppercase text-slate-500 mb-3">
                 Password
               </label>
               <div className="relative">
-                <i className="ri-lock-line absolute left-4 top-1/2 -translate-y-1/2 text-stone-600 text-sm" />
+                <i className="ri-lock-line absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 text-sm" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 bg-stone-950 border border-stone-800 rounded-xl text-white text-sm placeholder:text-stone-700 focus:outline-none focus:border-amber-500/50 transition-colors"
+                  className="w-full pl-10 pr-12 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm placeholder:text-slate-700 focus:outline-none focus:border-blue-500/50 transition-colors"
                   placeholder="Enter your password"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-600 hover:text-stone-400 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400 transition-colors"
                 >
                   <i className={`${showPassword ? 'ri-eye-off-line' : 'ri-eye-line'} text-lg`} />
                 </button>
@@ -134,7 +134,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={isLoading || verifying}
-              className="w-full bg-amber-500 hover:bg-amber-400 text-stone-950 py-3.5 rounded-xl font-black text-xs tracking-[0.3em] uppercase transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-blue-500 hover:bg-blue-400 text-slate-950 py-3.5 rounded-xl font-black text-xs tracking-[0.3em] uppercase transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading || verifying ? (
                 <><i className="ri-loader-4-line animate-spin" /> {verifying ? 'Verifying…' : 'Signing in…'}</>
@@ -148,7 +148,7 @@ export default function AdminLoginPage() {
         <div className="mt-6 text-center">
           <Link
             href="/"
-            className="text-[10px] font-bold tracking-[0.25em] uppercase text-stone-600 hover:text-stone-400 transition-colors"
+            className="text-[10px] font-bold tracking-[0.25em] uppercase text-slate-600 hover:text-slate-400 transition-colors"
           >
             <i className="ri-arrow-left-line mr-1" />Back to Store
           </Link>

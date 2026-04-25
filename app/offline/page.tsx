@@ -40,19 +40,19 @@ export default function OfflinePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-stone-50 flex items-center justify-center px-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex items-center justify-center px-6">
       <div className="max-w-md w-full text-center">
         {/* Animated illustration */}
         <div className="relative mb-8">
           <div className="w-32 h-32 mx-auto relative">
             {/* Outer ring */}
-            <div className="absolute inset-0 rounded-full border-4 border-stone-100 animate-pulse" />
+            <div className="absolute inset-0 rounded-full border-4 border-slate-100 animate-pulse" />
             {/* Inner circle */}
-            <div className="absolute inset-3 rounded-full bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
+            <div className="absolute inset-3 rounded-full bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
               <div className="relative">
-                <i className="ri-wifi-off-line text-5xl text-stone-600" />
+                <i className="ri-wifi-off-line text-5xl text-slate-600" />
                 {/* Animated dots */}
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
               </div>
             </div>
           </div>
@@ -72,7 +72,7 @@ export default function OfflinePage() {
           <button
             onClick={handleRetry}
             disabled={retrying}
-            className="w-full bg-stone-700 hover:bg-stone-800 disabled:bg-stone-400 text-white py-4 px-6 rounded-2xl font-semibold transition-all active:scale-[0.98] shadow-lg shadow-stone-700/20 flex items-center justify-center gap-2"
+            className="w-full bg-slate-700 hover:bg-slate-800 disabled:bg-slate-400 text-white py-4 px-6 rounded-2xl font-semibold transition-all active:scale-[0.98] shadow-lg shadow-slate-700/20 flex items-center justify-center gap-2"
           >
             {retrying ? (
               <>
@@ -99,7 +99,7 @@ export default function OfflinePage() {
         {/* Tips */}
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
           <h3 className="font-semibold text-gray-900 text-sm mb-3 flex items-center gap-2 justify-center">
-            <i className="ri-lightbulb-line text-amber-500" />
+            <i className="ri-lightbulb-line text-blue-500" />
             While offline you can:
           </h3>
           <div className="grid grid-cols-2 gap-3">
@@ -113,7 +113,7 @@ export default function OfflinePage() {
                 key={tip.text}
                 className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg p-2"
               >
-                <i className={`${tip.icon} text-stone-600 text-sm`} />
+                <i className={`${tip.icon} text-slate-600 text-sm`} />
                 <span>{tip.text}</span>
               </div>
             ))}
@@ -122,7 +122,7 @@ export default function OfflinePage() {
 
         {/* Status indicator */}
         <div className="mt-6 flex items-center justify-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-stone-500' : 'bg-red-400'} ${!isOnline && 'animate-pulse'}`} />
+          <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-slate-500' : 'bg-red-400'} ${!isOnline && 'animate-pulse'}`} />
           <span className="text-xs text-gray-400 font-medium">
             {isOnline ? 'Connected' : 'No connection'}
           </span>

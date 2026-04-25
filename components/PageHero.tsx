@@ -14,7 +14,7 @@ export default function PageHero({ title, subtitle, backgroundImage }: PageHeroP
     const showImage = backgroundImage && !imgError;
 
     return (
-        <div className={`relative overflow-hidden flex items-center justify-center min-h-[60vh] bg-stone-900`}>
+        <div className={`relative overflow-hidden flex items-center justify-center min-h-[60vh] bg-slate-900`}>
             {showImage && (
                 <>
                     <Image
@@ -34,9 +34,9 @@ export default function PageHero({ title, subtitle, backgroundImage }: PageHeroP
             {/* Fallback texture (shown when no image or image fails) */}
             {!showImage && (
                 <div className="absolute inset-0">
-                    <div className="absolute inset-0 bg-gradient-to-br from-stone-900 via-stone-800 to-stone-950" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950" />
                     <div className="absolute inset-0 opacity-[0.07] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
-                    <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400/30 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-400/30 to-transparent" />
                 </div>
             )}
 
@@ -52,7 +52,7 @@ export default function PageHero({ title, subtitle, backgroundImage }: PageHeroP
                 </h1>
 
                 {subtitle && (
-                    <p className="text-lg md:text-2xl text-stone-50/90 max-w-2xl mx-auto leading-relaxed font-light drop-shadow-lg">
+                    <p className="text-lg md:text-2xl text-slate-50/90 max-w-2xl mx-auto leading-relaxed font-light drop-shadow-lg">
                         {subtitle}
                     </p>
                 )}

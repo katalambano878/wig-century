@@ -204,24 +204,24 @@ function ShopContent() {
     <main className="min-h-screen bg-white">
 
       {/* ── SHOP HERO ───────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-stone-950">
+      <section className="relative overflow-hidden bg-slate-950">
 
         {/* Background image */}
         <Image
-          src="/hero_african_print.png"
+          src="/hero_trio.jpg"
           alt="Shop hero background"
           fill
-          className="object-cover object-center"
+          className="object-cover object-top"
           priority
           sizes="100vw"
           quality={82}
         />
 
         {/* Dark overlay — keeps text crisp */}
-        <div className="absolute inset-0 bg-stone-950/80 z-0" />
+        <div className="absolute inset-0 bg-slate-950/80 z-0" />
 
         {/* Subtle top accent line */}
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400/30 to-transparent z-20" />
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-blue-400/30 to-transparent z-20" />
 
         {/* Film grain texture */}
         <div
@@ -247,15 +247,15 @@ function ShopContent() {
           {/* Top row: eyebrow + breadcrumb */}
           <div className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-px bg-amber-400/60" />
-              <span className="text-amber-400/80 text-[9px] font-black tracking-[0.5em] uppercase">
+              <div className="w-8 h-px bg-blue-400/60" />
+              <span className="text-blue-400/80 text-[9px] font-black tracking-[0.5em] uppercase">
                 Shop All
               </span>
             </div>
-            <div className="hidden sm:flex items-center gap-2 text-[10px] tracking-widest uppercase text-stone-600">
-              <span className="hover:text-stone-400 transition-colors cursor-pointer">Home</span>
-              <i className="ri-arrow-right-s-line text-stone-700 text-xs" />
-              <span className="text-stone-400">Shop</span>
+            <div className="hidden sm:flex items-center gap-2 text-[10px] tracking-widest uppercase text-slate-600">
+              <span className="hover:text-slate-400 transition-colors cursor-pointer">Home</span>
+              <i className="ri-arrow-right-s-line text-slate-700 text-xs" />
+              <span className="text-slate-400">Shop</span>
             </div>
           </div>
 
@@ -264,11 +264,11 @@ function ShopContent() {
             <div className="max-w-xl">
               <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-white leading-[1.08] tracking-tight">
                 Everything You{' '}
-                <span className="italic font-light text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-500">
+                <span className="italic font-light text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-blue-500">
                   Need
                 </span>
               </h1>
-              <p className="text-stone-500 text-sm md:text-base font-light leading-relaxed mt-5 max-w-md">
+              <p className="text-slate-500 text-sm md:text-base font-light leading-relaxed mt-5 max-w-md">
                 Thrifted tops, African print wears, watches, sunglasses &amp; more — all curated and priced for you.
               </p>
             </div>
@@ -283,9 +283,9 @@ function ShopContent() {
                 <div key={s.label} className="flex items-center gap-8">
                   <div>
                     <div className="text-2xl font-bold text-white tracking-tight font-serif">{s.value}</div>
-                    <div className="text-[9px] font-bold tracking-[0.3em] uppercase text-stone-600 mt-0.5">{s.label}</div>
+                    <div className="text-[9px] font-bold tracking-[0.3em] uppercase text-slate-600 mt-0.5">{s.label}</div>
                   </div>
-                  {i < 2 && <div className="w-px h-8 bg-stone-800 hidden sm:block" />}
+                  {i < 2 && <div className="w-px h-8 bg-slate-800 hidden sm:block" />}
                 </div>
               ))}
             </div>
@@ -295,35 +295,35 @@ function ShopContent() {
         </div>
 
         {/* Bottom border glow */}
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-stone-700 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
       </section>
 
       {/* ── MOBILE TOOLBAR (sticky) ────────────────────────────── */}
-      <div className={`lg:hidden fixed left-0 right-0 z-30 bg-white border-b border-stone-100 shadow-sm transition-[top] duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${headerHidden ? 'top-0' : 'top-[68px]'}`}>
+      <div className={`lg:hidden fixed left-0 right-0 z-30 bg-white border-b border-slate-100 shadow-sm transition-[top] duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${headerHidden ? 'top-0' : 'top-[68px]'}`}>
         <div className="flex items-center justify-between px-4 h-12">
           <button
             onClick={() => setIsFilterOpen(true)}
-            className="flex items-center gap-2 text-stone-700 hover:text-stone-900 transition-colors"
+            className="flex items-center gap-2 text-slate-700 hover:text-slate-900 transition-colors"
           >
-            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-stone-100">
+            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100">
               <i className="ri-equalizer-2-line text-sm" />
             </span>
             <span className="text-xs font-bold tracking-[0.2em] uppercase">Filters</span>
             {activeFilters.length > 0 && (
-              <span className="flex items-center justify-center w-4 h-4 rounded-full bg-stone-900 text-white text-[9px] font-black">
+              <span className="flex items-center justify-center w-4 h-4 rounded-full bg-slate-900 text-white text-[9px] font-black">
                 {activeFilters.length}
               </span>
             )}
           </button>
 
           <div className="flex items-center gap-2">
-            <span className="text-[10px] tracking-widest uppercase text-stone-400 font-medium">
+            <span className="text-[10px] tracking-widest uppercase text-slate-400 font-medium">
               {loading ? '—' : `${totalProducts} items`}
             </span>
             <select
               value={sortBy}
               onChange={e => { setSortBy(e.target.value); setPage(1); }}
-              className="text-[10px] font-bold uppercase tracking-wider border border-stone-200 rounded-lg px-2 py-1.5 bg-white text-stone-700 focus:outline-none cursor-pointer"
+              className="text-[10px] font-bold uppercase tracking-wider border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-slate-700 focus:outline-none cursor-pointer"
             >
               {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
@@ -337,12 +337,12 @@ function ShopContent() {
               <button
                 key={i}
                 onClick={f.onClear}
-                className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full bg-stone-900 text-white text-[9px] font-bold tracking-wider uppercase"
+                className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900 text-white text-[9px] font-bold tracking-wider uppercase"
               >
                 {f.label} <i className="ri-close-line text-[10px]" />
               </button>
             ))}
-            <button onClick={clearAll} className="flex-shrink-0 text-[9px] font-bold tracking-wider uppercase text-stone-400 underline underline-offset-2">
+            <button onClick={clearAll} className="flex-shrink-0 text-[9px] font-bold tracking-wider uppercase text-slate-400 underline underline-offset-2">
               Clear all
             </button>
           </div>
@@ -369,14 +369,14 @@ function ShopContent() {
                   {/* Mobile sidebar header */}
                   <div className="flex items-center justify-between mb-7 lg:hidden">
                     <div>
-                      <h2 className="font-serif text-2xl text-stone-900">Refine</h2>
-                      <p className="text-[10px] tracking-[0.3em] uppercase text-stone-400 mt-0.5">
+                      <h2 className="font-serif text-2xl text-slate-900">Refine</h2>
+                      <p className="text-[10px] tracking-[0.3em] uppercase text-slate-400 mt-0.5">
                         {loading ? '—' : `${totalProducts} products`}
                       </p>
                     </div>
                     <button
                       onClick={() => setIsFilterOpen(false)}
-                      className="w-9 h-9 flex items-center justify-center rounded-full bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors"
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
                     >
                       <i className="ri-close-line text-lg" />
                     </button>
@@ -384,34 +384,34 @@ function ShopContent() {
 
                   {/* Desktop sidebar label */}
                   <div className="hidden lg:flex items-center justify-between mb-7">
-                    <p className="text-[10px] font-black tracking-[0.4em] uppercase text-stone-400">Refine Results</p>
+                    <p className="text-[10px] font-black tracking-[0.4em] uppercase text-slate-400">Refine Results</p>
                     {activeFilters.length > 0 && (
                       <button
                         onClick={clearAll}
-                        className="text-[9px] font-bold tracking-[0.2em] uppercase text-stone-400 hover:text-stone-700 transition-colors underline underline-offset-2"
+                        className="text-[9px] font-bold tracking-[0.2em] uppercase text-slate-400 hover:text-slate-700 transition-colors underline underline-offset-2"
                       >
                         Reset
                       </button>
                     )}
                   </div>
 
-                  <div className="space-y-0 divide-y divide-stone-100">
+                  <div className="space-y-0 divide-y divide-slate-100">
 
                     {/* ── CATEGORIES ──────────────────── */}
                     <div className="pb-6">
-                      <p className="text-[9px] font-black tracking-[0.4em] uppercase text-stone-300 mb-3">Category</p>
+                      <p className="text-[9px] font-black tracking-[0.4em] uppercase text-slate-300 mb-3">Category</p>
 
                       {/* All */}
                       <button
                         onClick={() => { setSelectedCategory('all'); setPage(1); setIsFilterOpen(false); }}
                         className={`group w-full flex items-center justify-between py-2 pl-3 transition-all duration-150 border-l-2 ${
                           selectedCategory === 'all'
-                            ? 'border-stone-900 text-stone-900 font-semibold'
-                            : 'border-transparent text-stone-500 hover:text-stone-800 hover:border-stone-300'
+                            ? 'border-slate-900 text-slate-900 font-semibold'
+                            : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
                         }`}
                       >
                         <span className="text-sm">All Products</span>
-                        <span className={`text-xs ${selectedCategory === 'all' ? 'text-stone-400' : 'text-stone-300'}`}>
+                        <span className={`text-xs ${selectedCategory === 'all' ? 'text-slate-400' : 'text-slate-300'}`}>
                           {loading ? '' : totalProducts}
                         </span>
                       </button>
@@ -428,27 +428,27 @@ function ShopContent() {
                               onClick={() => { setSelectedCategory(parent.slug); setPage(1); }}
                               className={`group w-full flex items-center justify-between py-2 pl-3 transition-all duration-150 border-l-2 ${
                                 isActive
-                                  ? 'border-stone-900 text-stone-900 font-semibold'
-                                  : 'border-transparent text-stone-500 hover:text-stone-800 hover:border-stone-300'
+                                  ? 'border-slate-900 text-slate-900 font-semibold'
+                                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
                               }`}
                             >
                               <span className="text-sm">{parent.name}</span>
                               {children.length > 0 && (
-                                <i className={`text-xs transition-transform duration-200 ${isActive || childActive ? 'ri-subtract-line text-stone-400' : 'ri-add-line text-stone-300 group-hover:text-stone-400'}`} />
+                                <i className={`text-xs transition-transform duration-200 ${isActive || childActive ? 'ri-subtract-line text-slate-400' : 'ri-add-line text-slate-300 group-hover:text-slate-400'}`} />
                               )}
                             </button>
 
                             {/* Children — show when parent or child is active */}
                             {children.length > 0 && (isActive || childActive) && (
-                              <div className="ml-3 pl-3 border-l border-stone-100 mb-1">
+                              <div className="ml-3 pl-3 border-l border-slate-100 mb-1">
                                 {children.map(child => (
                                   <button
                                     key={child.id}
                                     onClick={() => { setSelectedCategory(child.slug); setPage(1); setIsFilterOpen(false); }}
                                     className={`w-full flex items-center justify-between py-1.5 pl-2 text-xs transition-all border-l-2 ${
                                       selectedCategory === child.slug
-                                        ? 'border-stone-600 text-stone-900 font-semibold'
-                                        : 'border-transparent text-stone-400 hover:text-stone-700 hover:border-stone-200'
+                                        ? 'border-slate-600 text-slate-900 font-semibold'
+                                        : 'border-transparent text-slate-400 hover:text-slate-700 hover:border-slate-200'
                                     }`}
                                   >
                                     <span>{child.name}</span>
@@ -463,13 +463,13 @@ function ShopContent() {
 
                     {/* ── PRICE ───────────────────────── */}
                     <div className="py-6">
-                      <p className="text-[9px] font-black tracking-[0.4em] uppercase text-stone-300 mb-4">Price Range</p>
+                      <p className="text-[9px] font-black tracking-[0.4em] uppercase text-slate-300 mb-4">Price Range</p>
 
                       {/* Price display */}
                       <div className="flex items-end justify-between mb-3">
                         <div>
-                          <p className="text-[9px] text-stone-300 uppercase tracking-widest mb-0.5">Max</p>
-                          <p className={`text-2xl font-light leading-none transition-colors ${priceRange[1] < 5000 ? 'text-stone-900' : 'text-stone-300'}`}>
+                          <p className="text-[9px] text-slate-300 uppercase tracking-widest mb-0.5">Max</p>
+                          <p className={`text-2xl font-light leading-none transition-colors ${priceRange[1] < 5000 ? 'text-slate-900' : 'text-slate-300'}`}>
                             GH₵<span className="font-semibold">{priceRange[1] < 5000 ? priceRange[1].toLocaleString() : '5,000'}</span>
                             {priceRange[1] >= 5000 && <span className="text-base">+</span>}
                           </p>
@@ -477,7 +477,7 @@ function ShopContent() {
                         {priceRange[1] < 5000 && (
                           <button
                             onClick={() => { setPriceRange([0, 5000]); setPage(1); }}
-                            className="text-[9px] font-bold tracking-[0.2em] uppercase text-stone-300 hover:text-stone-600 transition-colors"
+                            className="text-[9px] font-bold tracking-[0.2em] uppercase text-slate-300 hover:text-slate-600 transition-colors"
                           >
                             Reset
                           </button>
@@ -485,18 +485,18 @@ function ShopContent() {
                       </div>
 
                       <div className="relative">
-                        <div className="h-px bg-stone-200 absolute top-1/2 left-0 right-0" />
+                        <div className="h-px bg-slate-200 absolute top-1/2 left-0 right-0" />
                         <input
                           type="range"
                           min="0" max="5000" step="50"
                           value={priceRange[1]}
                           onChange={e => { setPriceRange([0, parseInt(e.target.value)]); setPage(1); }}
-                          className="relative w-full h-px appearance-none cursor-pointer bg-transparent accent-stone-900"
+                          className="relative w-full h-px appearance-none cursor-pointer bg-transparent accent-slate-900"
                           style={{ WebkitAppearance: 'none' }}
                         />
                       </div>
 
-                      <div className="flex justify-between text-[9px] text-stone-300 uppercase tracking-widest mt-2">
+                      <div className="flex justify-between text-[9px] text-slate-300 uppercase tracking-widest mt-2">
                         <span>GH₵0</span>
                         <span>GH₵5,000+</span>
                       </div>
@@ -504,7 +504,7 @@ function ShopContent() {
 
                     {/* ── RATING ──────────────────────── */}
                     <div className="py-6">
-                      <p className="text-[9px] font-black tracking-[0.4em] uppercase text-stone-300 mb-3">Customer Rating</p>
+                      <p className="text-[9px] font-black tracking-[0.4em] uppercase text-slate-300 mb-3">Customer Rating</p>
                       <div className="space-y-1">
                         {[4, 3, 2, 1].map(r => (
                           <button
@@ -512,8 +512,8 @@ function ShopContent() {
                             onClick={() => { setSelectedRating(r === selectedRating ? 0 : r); setPage(1); }}
                             className={`group w-full flex items-center gap-3 py-2.5 px-3 rounded-xl transition-all duration-150 ${
                               selectedRating === r
-                                ? 'bg-stone-900 text-white'
-                                : 'hover:bg-stone-50 text-stone-600'
+                                ? 'bg-slate-900 text-white'
+                                : 'hover:bg-slate-50 text-slate-600'
                             }`}
                           >
                             <div className="flex items-center gap-0.5">
@@ -522,13 +522,13 @@ function ShopContent() {
                                   key={s}
                                   className={`text-xs ${
                                     s <= r
-                                      ? selectedRating === r ? 'ri-star-fill text-amber-300' : 'ri-star-fill text-amber-400'
-                                      : selectedRating === r ? 'ri-star-line text-stone-600' : 'ri-star-line text-stone-200'
+                                      ? selectedRating === r ? 'ri-star-fill text-blue-300' : 'ri-star-fill text-blue-400'
+                                      : selectedRating === r ? 'ri-star-line text-slate-600' : 'ri-star-line text-slate-200'
                                   }`}
                                 />
                               ))}
                             </div>
-                            <span className={`text-xs font-medium ${selectedRating === r ? 'text-stone-300' : 'text-stone-400'}`}>
+                            <span className={`text-xs font-medium ${selectedRating === r ? 'text-slate-300' : 'text-slate-400'}`}>
                               & up
                             </span>
                           </button>
@@ -542,14 +542,14 @@ function ShopContent() {
                   <div className="mt-6 space-y-2">
                     <button
                       onClick={() => setIsFilterOpen(false)}
-                      className="w-full bg-stone-900 hover:bg-stone-700 text-white py-3.5 rounded-xl font-bold text-xs tracking-[0.25em] uppercase transition-colors"
+                      className="w-full bg-slate-900 hover:bg-slate-700 text-white py-3.5 rounded-xl font-bold text-xs tracking-[0.25em] uppercase transition-colors"
                     >
                       {loading ? 'Loading…' : `Show ${totalProducts} Results`}
                     </button>
                     {activeFilters.length > 0 && (
                       <button
                         onClick={() => { clearAll(); setIsFilterOpen(false); }}
-                        className="w-full text-center text-[10px] font-bold tracking-[0.2em] uppercase text-stone-400 hover:text-stone-700 transition-colors py-1"
+                        className="w-full text-center text-[10px] font-bold tracking-[0.2em] uppercase text-slate-400 hover:text-slate-700 transition-colors py-1"
                       >
                         Clear all filters
                       </button>
@@ -566,19 +566,19 @@ function ShopContent() {
             <div className="flex-1 min-w-0">
 
               {/* ── Sort & count bar ────────────────── */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-stone-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-slate-100">
 
                 <div className="flex items-center gap-3">
                   {loading ? (
-                    <div className="flex items-center gap-2 text-stone-400">
-                      <span className="w-3 h-3 rounded-full border border-stone-300 border-t-stone-600 animate-spin inline-block" />
+                    <div className="flex items-center gap-2 text-slate-400">
+                      <span className="w-3 h-3 rounded-full border border-slate-300 border-t-slate-600 animate-spin inline-block" />
                       <span className="text-sm">Loading…</span>
                     </div>
                   ) : (
-                    <p className="text-sm text-stone-500">
-                      <span className="font-semibold text-stone-900">{products.length}</span>
-                      <span className="text-stone-300 mx-1.5">/</span>
-                      <span className="font-semibold text-stone-900">{totalProducts}</span>
+                    <p className="text-sm text-slate-500">
+                      <span className="font-semibold text-slate-900">{products.length}</span>
+                      <span className="text-slate-300 mx-1.5">/</span>
+                      <span className="font-semibold text-slate-900">{totalProducts}</span>
                       <span className="ml-1.5">products</span>
                     </p>
                   )}
@@ -590,9 +590,9 @@ function ShopContent() {
                         <button
                           key={i}
                           onClick={f.onClear}
-                          className="flex items-center gap-1 pl-2.5 pr-2 py-1 rounded-full bg-stone-100 text-stone-700 text-[10px] font-semibold tracking-wide hover:bg-stone-200 transition-colors"
+                          className="flex items-center gap-1 pl-2.5 pr-2 py-1 rounded-full bg-slate-100 text-slate-700 text-[10px] font-semibold tracking-wide hover:bg-slate-200 transition-colors"
                         >
-                          {f.label} <i className="ri-close-line text-xs text-stone-400" />
+                          {f.label} <i className="ri-close-line text-xs text-slate-400" />
                         </button>
                       ))}
                     </div>
@@ -600,15 +600,15 @@ function ShopContent() {
                 </div>
 
                 {/* Sort pills — desktop */}
-                <div className="hidden sm:flex items-center gap-1 bg-stone-50 rounded-xl p-1">
+                <div className="hidden sm:flex items-center gap-1 bg-slate-50 rounded-xl p-1">
                   {SORT_OPTIONS.map(opt => (
                     <button
                       key={opt.value}
                       onClick={() => { setSortBy(opt.value); setPage(1); }}
                       className={`px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-[0.15em] uppercase transition-all duration-150 whitespace-nowrap ${
                         sortBy === opt.value
-                          ? 'bg-white text-stone-900 shadow-sm'
-                          : 'text-stone-400 hover:text-stone-700'
+                          ? 'bg-white text-slate-900 shadow-sm'
+                          : 'text-slate-400 hover:text-slate-700'
                       }`}
                     >
                       {opt.label}
@@ -627,17 +627,17 @@ function ShopContent() {
                 /* Empty state */
                 <div className="min-h-[420px] flex flex-col items-center justify-center text-center py-20">
                   <div className="relative mb-8">
-                    <div className="w-20 h-20 rounded-2xl bg-stone-50 border border-stone-100 flex items-center justify-center">
-                      <i className="ri-search-2-line text-3xl text-stone-300" />
+                    <div className="w-20 h-20 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center">
+                      <i className="ri-search-2-line text-3xl text-slate-300" />
                     </div>
                   </div>
-                  <h3 className="font-serif text-3xl text-stone-900 mb-3">Nothing found</h3>
-                  <p className="text-stone-400 text-sm max-w-xs mb-8 leading-relaxed">
+                  <h3 className="font-serif text-3xl text-slate-900 mb-3">Nothing found</h3>
+                  <p className="text-slate-400 text-sm max-w-xs mb-8 leading-relaxed">
                     Try adjusting your filters or browsing a different category.
                   </p>
                   <button
                     onClick={clearAll}
-                    className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white px-7 py-3.5 rounded-xl font-bold text-xs tracking-[0.2em] uppercase transition-colors"
+                    className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-700 text-white px-7 py-3.5 rounded-xl font-bold text-xs tracking-[0.2em] uppercase transition-colors"
                   >
                     Clear all filters <i className="ri-arrow-right-line" />
                   </button>
@@ -657,7 +657,7 @@ function ShopContent() {
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg text-stone-400 hover:text-stone-900 hover:bg-stone-50 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
+                    className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-50 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
                     aria-label="Previous"
                   >
                     <i className="ri-arrow-left-s-line text-xl" />
@@ -665,15 +665,15 @@ function ShopContent() {
 
                   {paginationRange(page, totalPages).map((p, i) =>
                     p === '…' ? (
-                      <span key={`e${i}`} className="w-9 h-9 flex items-center justify-center text-stone-300 text-sm">…</span>
+                      <span key={`e${i}`} className="w-9 h-9 flex items-center justify-center text-slate-300 text-sm">…</span>
                     ) : (
                       <button
                         key={p}
                         onClick={() => setPage(p as number)}
                         className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
                           page === p
-                            ? 'bg-stone-900 text-white shadow-sm'
-                            : 'text-stone-500 hover:text-stone-900 hover:bg-stone-50'
+                            ? 'bg-slate-900 text-white shadow-sm'
+                            : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                         }`}
                       >
                         {p}
@@ -684,7 +684,7 @@ function ShopContent() {
                   <button
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg text-stone-400 hover:text-stone-900 hover:bg-stone-50 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
+                    className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-50 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
                     aria-label="Next"
                   >
                     <i className="ri-arrow-right-s-line text-xl" />
@@ -706,8 +706,8 @@ export default function ShopPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <div className="w-10 h-10 border-2 border-stone-200 border-t-stone-900 rounded-full animate-spin" />
-        <p className="text-[10px] tracking-[0.35em] uppercase text-stone-400">Loading the shop…</p>
+        <div className="w-10 h-10 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin" />
+        <p className="text-[10px] tracking-[0.35em] uppercase text-slate-400">Loading the shop…</p>
       </div>
     }>
       <ShopContent />

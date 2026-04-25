@@ -114,7 +114,7 @@ export default function AdminSalesPage() {
               type="button"
               disabled={saving}
               onClick={() => handleToggle(!salesActive)}
-              className={`relative inline-flex h-10 w-[3.5rem] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2 ${
+              className={`relative inline-flex h-10 w-[3.5rem] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 ${
                 salesActive ? 'bg-red-600' : 'bg-gray-300'
               } ${saving ? 'opacity-60 cursor-wait' : ''}`}
               role="switch"
@@ -127,7 +127,7 @@ export default function AdminSalesPage() {
               />
             </button>
           ) : (
-            <p className="text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded-lg border border-amber-100">
+            <p className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-100">
               Only administrators can change this setting.
             </p>
           )}

@@ -3,15 +3,14 @@ import { supabase } from '@/lib/supabase';
 import { escapeHtml } from '@/lib/sanitize';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 'missing_api_key');
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@luxurylootsgh.com';
-const EMAIL_FROM = process.env.EMAIL_FROM || 'Luxury Loots GH <noreply@luxurylootsgh.com>';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
+const EMAIL_FROM = process.env.EMAIL_FROM || 'Wig Century <noreply@example.com>';
 const BRAND = {
-    name: 'Luxury Loots GH',
-    color: '#7C3AED',
+    name: 'Wig Century',
+    color: '#2563EB',
     colorLight: '#EDE9FE',
     colorDark: '#4C1D95',
     url: (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/+$/, ''),
-    phone: '0535227192',
 };
 
 // Reusable branded email layout
@@ -154,7 +153,7 @@ export async function sendSMS({ to, message }: { to: string; message: string }) 
             },
             body: JSON.stringify({
                 type: 1,
-                senderid: 'LuxuryLoots',
+                senderid: 'WigCentury',
                 messages: [
                     {
                         recipient: recipient,

@@ -56,7 +56,7 @@ export default function BlogPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="bg-gradient-to-br from-blue-50 via-white to-amber-50 py-16">
+      <div className="bg-gradient-to-br from-blue-50 via-white to-blue-50 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-5xl font-bold text-gray-900 mb-6">Our Blog</h1>
@@ -85,7 +85,7 @@ export default function BlogPage() {
               </div>
               <div className="p-12 flex flex-col justify-center">
                 <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-                  <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-medium">
+                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">
                     {featuredPost.category}
                   </span>
                   <span>{featuredPost.date}</span>

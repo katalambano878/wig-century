@@ -26,7 +26,7 @@
     "typescript": "^5",
     "vercel": "^50.38.1"
   },
-  "name": "luxurylootsgh",
+  "name": "wig-century",
   "private": true,
   "engines": {
     "node": "20.x"

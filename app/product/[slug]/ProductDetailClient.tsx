@@ -354,7 +354,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                     {[1, 2, 3, 4, 5].map((star) => (
                       <i
                         key={star}
-                        className={`${star <= Math.round(product.rating) ? 'ri-star-fill text-amber-400' : 'ri-star-line text-gray-300'} text-lg`}
+                        className={`${star <= Math.round(product.rating) ? 'ri-star-fill text-blue-400' : 'ri-star-line text-gray-300'} text-lg`}
                       ></i>
                     ))}
                   </div>
@@ -569,7 +569,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                         </span>
                       )}
                       {activeStock > 0 && activeStock <= 10 && (
-                        <span className="text-amber-600 font-medium text-sm">
+                        <span className="text-blue-600 font-medium text-sm">
                           <i className="ri-error-warning-line mr-1"></i>
                           Only {activeStock} left in stock
                         </span>

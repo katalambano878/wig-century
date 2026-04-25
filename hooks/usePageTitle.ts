@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-const SITE_NAME = 'Luxury Loots GH';
+const SITE_NAME = 'Wig Century';
 
 export function usePageTitle(title: string) {
   useEffect(() => {

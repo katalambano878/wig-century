@@ -128,7 +128,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
         <p>Protect your electronics and reduce energy waste with a smart power strip that cuts power to devices in standby mode.</p>
 
         <h2>9. Bath Towel Set</h2>
-        <p>Luxury doesn't have to be expensive. A set of soft, absorbent towels in coordinating colours makes your bathroom feel like a spa.</p>
+        <p>Quality does not have to be complicated. A few thoughtful upgrades — like soft towels in colours you love — can make your bathroom feel calmer every day.</p>
 
         <h2>10. Decorative Mirror</h2>
         <p>Mirrors make spaces feel larger and brighter by reflecting light. Choose a statement piece that complements your décor style.</p>
@@ -325,7 +325,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
         </article>
 
         <div className="mt-12 pt-12 border-t border-gray-200">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-start">
             <div>
               <p className="text-sm text-gray-500 mb-2">Written by</p>
               <div className="flex items-center gap-3">
@@ -336,23 +336,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
                   <p className="font-bold text-gray-900">{post.author}</p>
                   <p className="text-sm text-gray-500">Content Writer</p>
                 </div>
-              </div>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-3">Share this article</p>
-              <div className="flex gap-3">
-                <button className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-blue-100 transition-colors cursor-pointer">
-                  <i className="ri-facebook-fill text-gray-600"></i>
-                </button>
-                <button className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-blue-100 transition-colors cursor-pointer">
-                  <i className="ri-twitter-fill text-gray-600"></i>
-                </button>
-                <button className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-blue-100 transition-colors cursor-pointer">
-                  <i className="ri-linkedin-fill text-gray-600"></i>
-                </button>
-                <button className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-blue-100 transition-colors cursor-pointer">
-                  <i className="ri-whatsapp-line text-gray-600"></i>
-                </button>
               </div>
             </div>
           </div>

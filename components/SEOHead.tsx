@@ -16,8 +16,8 @@ interface SEOProps {
 }
 
 export function generateMetadata({
-  title = 'Thrifted Fashion & Accessories in Ghana',
-  description = 'Shop thrifted tops, African print wears, watches and sunglasses at Luxury Loots GH in Obuasi, Ghana.',
+  title = 'Premium Wigs & Hair',
+  description = 'Shop quality wigs, bundles, and hair care at Wig Century — styles you will love, shipped with care.',
   keywords = [],
   ogImage,
   ogType = 'website',
@@ -32,16 +32,16 @@ export function generateMetadata({
   const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://example.com';
   const defaultOgImage = `${siteUrl}/logo.png`;
   const resolvedOgImage = ogImage || defaultOgImage;
-  const siteName = 'Luxury Loots GH';
+  const siteName = 'Wig Century';
   const fullTitle = title.includes(siteName) ? title : `${title} | ${siteName}`;
 
   const defaultKeywords = [
-    'thrift shop ghana',
-    'African print wears',
-    'thrifted tops ghana',
-    'watches sunglasses Obuasi',
-    'Luxury Loots GH',
-    'affordable fashion ghana'
+    'wigs',
+    'hair bundles',
+    'wig shop',
+    'Wig Century',
+    'human hair wigs',
+    'synthetic wigs'
   ];
 
   const allKeywords = [...new Set([...keywords, ...defaultKeywords])];
@@ -116,7 +116,7 @@ export function generateProductSchema(product: {
     sku: product.sku,
     brand: {
       '@type': 'Brand',
-      name: product.brand || 'Luxury Loots GH'
+      name: product.brand || 'Wig Century'
     },
     offers: {
       '@type': 'Offer',
@@ -165,18 +165,11 @@ export function generateOrganizationSchema() {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'Luxury Loots GH',
+    name: 'Wig Century',
     url: siteUrl,
     logo: `${siteUrl}/logo.png`,
     image: `${siteUrl}/logo.png`,
-    contactPoint: {
-      '@type': 'ContactPoint',
-      telephone: '+233535227192',
-      contactType: 'Customer Service',
-      areaServed: 'GH',
-      availableLanguage: ['English']
-    },
-    sameAs: []
+    sameAs: [] as string[]
   };
 }
 
@@ -185,7 +178,7 @@ export function generateWebsiteSchema() {
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'Luxury Loots GH',
+    name: 'Wig Century',
     url: siteUrl,
     potentialAction: {
       '@type': 'SearchAction',

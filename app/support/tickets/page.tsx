@@ -48,7 +48,7 @@ export default function MyTicketsPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'open': return 'bg-blue-100 text-blue-700';
-      case 'in_progress': return 'bg-amber-100 text-amber-700';
+      case 'in_progress': return 'bg-blue-100 text-blue-700';
       case 'resolved': return 'bg-blue-100 text-blue-700';
       default: return 'bg-gray-100 text-gray-700';
     }
@@ -206,11 +206,11 @@ export default function MyTicketsPage() {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="w-12 h-12 flex items-center justify-center bg-purple-100 rounded-lg mb-4">
-                <i className="ri-customer-service-line text-2xl text-purple-700"></i>
+              <div className="w-12 h-12 flex items-center justify-center bg-blue-100 rounded-lg mb-4">
+                <i className="ri-customer-service-line text-2xl text-blue-700"></i>
               </div>
               <h3 className="font-bold text-gray-900 mb-2">Support Hours</h3>
-              <p className="text-2xl font-bold text-purple-700 mb-1">24/7</p>
+              <p className="text-2xl font-bold text-blue-700 mb-1">24/7</p>
               <p className="text-sm text-gray-600">Always here to help</p>
             </div>
           </div>

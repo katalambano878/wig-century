@@ -23,24 +23,23 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://example.com';
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Luxury Loots GH | Thrifted Tops · African Print · Accessories",
-    template: "%s | Luxury Loots GH"
+    default: "Wig Century | Premium Wigs · Bundles · Hair Care",
+    template: "%s | Wig Century"
   },
-  description: "Shop thrifted tops, African print wears, watches, and sunglasses at Luxury Loots GH — quality fashion at great prices in Obuasi, Ghana.",
+  description: "Shop quality wigs, bundles, and hair care at Wig Century — curated styles and trusted quality.",
   keywords: [
-    "Luxury Loots GH",
-    "thrift shop ghana",
-    "African print wears",
-    "thrifted tops",
-    "watches Ghana",
-    "sunglasses Ghana",
-    "Obuasi fashion",
-    "affordable fashion ghana"
+    "Wig Century",
+    "wigs",
+    "hair bundles",
+    "lace front wigs",
+    "human hair",
+    "synthetic wigs",
+    "hair care"
   ],
-  authors: [{ name: "Luxury Loots GH" }],
-  creator: "Luxury Loots GH",
-  publisher: "Luxury Loots GH",
-  applicationName: "Luxury Loots GH",
+  authors: [{ name: "Wig Century" }],
+  creator: "Wig Century",
+  publisher: "Wig Century",
+  applicationName: "Wig Century",
   referrer: "origin-when-cross-origin",
   robots: {
     index: true,
@@ -66,10 +65,10 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Luxury Loots GH',
+    title: 'Wig Century',
   },
   formatDetection: {
-    telephone: true,
+    telephone: false,
     email: false,
     address: false,
   },
@@ -80,23 +79,23 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_GH",
     url: siteUrl,
-    title: "Luxury Loots GH | Thrifted Tops · African Print · Accessories",
-    description: "Shop thrifted tops, African print wears, watches, and sunglasses at Luxury Loots GH — quality fashion in Obuasi, Ghana.",
-    siteName: "Luxury Loots GH",
+    title: "Wig Century | Premium Wigs · Bundles · Hair Care",
+    description: "Shop quality wigs, bundles, and hair care at Wig Century.",
+    siteName: "Wig Century",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Luxury Loots GH — Fashion & Accessories",
+        alt: "Wig Century — Wigs & Hair",
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Luxury Loots GH | Thrifted Tops · African Print · Accessories",
-    description: "Shop thrifted tops, African print wears, watches, and sunglasses in Obuasi, Ghana.",
+    title: "Wig Century | Premium Wigs · Bundles · Hair Care",
+    description: "Shop quality wigs, bundles, and hair care at Wig Century.",
     images: ["/og-image.png"],
   },
   alternates: {
@@ -122,7 +121,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#2563eb" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Luxury Loots GH" />
+        <meta name="apple-mobile-web-app-title" content="Wig Century" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-TileColor" content="#2563eb" />
         <meta name="msapplication-tap-highlight" content="no" />
@@ -149,25 +148,10 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Organization",
-              "name": "Luxury Loots GH",
+              "name": "Wig Century",
               "url": siteUrl,
               "logo": siteUrl + "/logo.png",
-              "description": "Shop thrifted tops, African print wears, watches, and sunglasses in Obuasi, Ghana.",
-              "address": {
-                "@type": "PostalAddress",
-                "streetAddress": "Obuasi",
-                "addressLocality": "Obuasi",
-                "addressRegion": "Ashanti Region",
-                "addressCountry": "GH"
-              },
-              "telephone": "+233535227192",
-              "contactPoint": {
-                "@type": "ContactPoint",
-                "contactType": "customer service",
-                "telephone": "+233535227192",
-                "areaServed": "GH",
-                "availableLanguage": "English"
-              }
+              "description": "Shop quality wigs, bundles, and hair care at Wig Century."
             })
           }}
         />
@@ -204,7 +188,7 @@ export default function RootLayout({
       <body className={`antialiased overflow-x-hidden pwa-body ${pacifico.variable} ${playfair.variable} ${outfit.variable} font-sans`} style={{ fontFamily: 'var(--font-outfit), system-ui, sans-serif' }}>
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[10000] focus:px-6 focus:py-3 focus:bg-stone-600 focus:text-white focus:rounded-lg focus:font-semibold focus:shadow-lg"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[10000] focus:px-6 focus:py-3 focus:bg-slate-600 focus:text-white focus:rounded-lg focus:font-semibold focus:shadow-lg"
         >
           Skip to main content
         </a>
