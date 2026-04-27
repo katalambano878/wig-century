@@ -59,7 +59,7 @@ const HERO_SLIDES = [
     subtext: "Keep every install looking its best with essentials picked to pair with your purchase.",
     cta: { text: 'Shop All', href: '/shop' },
     cta2: { text: 'Message Us', href: '/contact' },
-    position: 'object-center',
+    position: 'object-top',
   },
 ];
 
@@ -182,9 +182,9 @@ export default function Home() {
             </div>
 
             {/* Layered overlays for cinematic depth */}
-            <div className="absolute inset-0 bg-black/25" />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/15" />
+            <div className="absolute inset-0 bg-black/15" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/25 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10" />
 
             {/* Film grain */}
             <div
