@@ -1,4 +1,14 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
+import { buildMetadata } from '@/lib/seo';
+
+export const metadata: Metadata = buildMetadata({
+  title: 'Wig Century Journal — Hair Tips, Trends & Stories',
+  description:
+    'Style guides, hair-care advice and trend reports from the Wig Century team. Learn how to install, maintain and rock your favourite wigs.',
+  path: '/blog',
+  keywords: ['wig blog', 'hair tips', 'wig install guide', 'wig care tips', 'hair trends Ghana'],
+});
 
 export default function BlogPage() {
   const featuredPost = {

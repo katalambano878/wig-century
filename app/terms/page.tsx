@@ -1,3 +1,12 @@
+import type { Metadata } from 'next';
+import { buildMetadata } from '@/lib/seo';
+
+export const metadata: Metadata = buildMetadata({
+  title: 'Terms & Conditions',
+  description: 'The terms and conditions that govern the use of the Wig Century website and services.',
+  path: '/terms',
+});
+
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-white">

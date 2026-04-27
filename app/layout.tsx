@@ -4,6 +4,7 @@ import { Pacifico, Playfair_Display, Outfit } from "next/font/google";
 import { CartProvider } from "@/context/CartContext";
 import { WishlistProvider } from "@/context/WishlistContext";
 import StoreLayoutShell from "@/components/StoreLayoutShell";
+import { SITE, buildMetadata, organizationJsonLd, websiteJsonLd, jsonLdScript } from "@/lib/seo";
 import "./globals.css";
 
 const pacifico = Pacifico({ weight: '400', subsets: ['latin'], variable: '--font-pacifico' });
@@ -14,99 +15,62 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
-  themeColor: '#2563eb',
+  themeColor: SITE.themeColor,
+  colorScheme: 'light',
 };
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://example.com';
-
-// Favicon & OG from public: add favicon.ico, favicon.png, og-image.png (1200×630) to public as needed
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE.url),
+  ...buildMetadata({
+    title: `${SITE.name} | ${SITE.tagline}`,
+    description: SITE.description,
+    path: '/',
+  }),
   title: {
-    default: "Wig Century | Premium Wigs · Bundles · Hair Care",
-    template: "%s | Wig Century"
+    default: `${SITE.name} | ${SITE.tagline}`,
+    template: `%s | ${SITE.name}`,
   },
-  description: "Shop quality wigs, bundles, and hair care at Wig Century — curated styles and trusted quality.",
-  keywords: [
-    "Wig Century",
-    "wigs",
-    "hair bundles",
-    "lace front wigs",
-    "human hair",
-    "synthetic wigs",
-    "hair care"
-  ],
-  authors: [{ name: "Wig Century" }],
-  creator: "Wig Century",
-  publisher: "Wig Century",
-  applicationName: "Wig Century",
-  referrer: "origin-when-cross-origin",
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
-  icons: {
-    icon: [
-      { url: '/logo.png', sizes: 'any', type: 'image/png' },
-      { url: '/logo.png', sizes: '32x32', type: 'image/png' },
-      { url: '/logo.png', sizes: '16x16', type: 'image/png' },
-    ],
-    shortcut: '/logo.png',
-    apple: '/logo.png',
-  },
-  manifest: '/manifest.json',
+  applicationName: SITE.name,
+  authors: [{ name: SITE.name, url: SITE.url }],
+  creator: SITE.name,
+  publisher: SITE.name,
+  referrer: 'origin-when-cross-origin',
+  category: 'shopping',
+  formatDetection: { telephone: false, email: false, address: false },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Wig Century',
+    title: SITE.name,
   },
-  formatDetection: {
-    telephone: false,
-    email: false,
-    address: false,
-  },
-  verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '',
-  },
-  openGraph: {
-    type: "website",
-    locale: "en_GH",
-    url: siteUrl,
-    title: "Wig Century | Premium Wigs · Bundles · Hair Care",
-    description: "Shop quality wigs, bundles, and hair care at Wig Century.",
-    siteName: "Wig Century",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Wig Century — Wigs & Hair",
-        type: "image/png",
-      },
+  // Force the brand logo for every icon slot. Next will also auto-wire
+  // app/icon.png + app/apple-icon.png from the App-Router conventions —
+  // these explicit entries make the override watertight against any
+  // browser cache or third-party preview tool.
+  icons: {
+    icon: [
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+      { url: '/favicon.ico', sizes: '32x32' },
+    ],
+    shortcut: [{ url: '/favicon.ico' }],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+    other: [
+      { rel: 'mask-icon', url: '/icon-512.png', color: SITE.themeColor },
     ],
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "Wig Century | Premium Wigs · Bundles · Hair Care",
-    description: "Shop quality wigs, bundles, and hair care at Wig Century.",
-    images: ["/og-image.png"],
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
   },
-  alternates: {
-    canonical: siteUrl,
+  other: {
+    'msapplication-TileColor': SITE.themeColor,
+    'msapplication-TileImage': '/icon-192.png',
+    'msapplication-config': 'none',
+    'apple-mobile-web-app-capable': 'yes',
+    'mobile-web-app-capable': 'yes',
   },
-  category: "shopping",
 };
 
-// Google Analytics Measurement ID
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
-// Google reCAPTCHA v3 Site Key
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
 export default function RootLayout({
@@ -117,47 +81,20 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* PWA Meta Tags */}
-        <meta name="theme-color" content="#2563eb" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Wig Century" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-TileColor" content="#2563eb" />
-        <meta name="msapplication-tap-highlight" content="no" />
-
-        {/* Favicon: logo */}
-        <link rel="icon" href="/logo.png" type="image/png" sizes="any" />
-        <link rel="shortcut icon" href="/logo.png" />
-
-        {/* Apple Touch Icons */}
-        <link rel="apple-touch-icon" href="/logo.png" />
-        <link rel="apple-touch-startup-image" href="/logo.png" />
-
         <link
           href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css"
           rel="stylesheet"
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://www.google.com" />
 
-        {/* Structured Data - Organization */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              "name": "Wig Century",
-              "url": siteUrl,
-              "logo": siteUrl + "/logo.png",
-              "description": "Shop quality wigs, bundles, and hair care at Wig Century."
-            })
-          }}
-        />
+        {/* Site-wide JSON-LD: Organization + WebSite (with sitelinks search). */}
+        <script {...jsonLdScript(organizationJsonLd())} />
+        <script {...jsonLdScript(websiteJsonLd())} />
       </head>
 
-      {/* Google Analytics */}
       {GA_MEASUREMENT_ID && (
         <>
           <Script
@@ -177,7 +114,6 @@ export default function RootLayout({
         </>
       )}
 
-      {/* Google reCAPTCHA v3 */}
       {RECAPTCHA_SITE_KEY && (
         <Script
           src={`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`}
@@ -185,7 +121,10 @@ export default function RootLayout({
         />
       )}
 
-      <body className={`antialiased overflow-x-hidden pwa-body ${pacifico.variable} ${playfair.variable} ${outfit.variable} font-sans`} style={{ fontFamily: 'var(--font-outfit), system-ui, sans-serif' }}>
+      <body
+        className={`antialiased overflow-x-hidden pwa-body ${pacifico.variable} ${playfair.variable} ${outfit.variable} font-sans`}
+        style={{ fontFamily: 'var(--font-outfit), system-ui, sans-serif' }}
+      >
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[10000] focus:px-6 focus:py-3 focus:bg-slate-600 focus:text-white focus:rounded-lg focus:font-semibold focus:shadow-lg"

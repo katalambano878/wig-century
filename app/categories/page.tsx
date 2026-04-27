@@ -1,8 +1,18 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import type { Metadata } from 'next';
 import { supabase } from '@/lib/supabase';
+import { buildMetadata } from '@/lib/seo';
 
 export const revalidate = 0;
+
+export const metadata: Metadata = buildMetadata({
+  title: 'Shop by Category — Wigs, Bundles & Hair Care',
+  description:
+    'Browse Wig Century categories: lace fronts, closure wigs, hair bundles, frontals and styling essentials. Find the look you love.',
+  path: '/categories',
+  keywords: ['wig categories', 'wig types', 'lace front category', 'bundles category'],
+});
 
 export default async function CategoriesPage() {
   const { data: categoriesData } = await supabase

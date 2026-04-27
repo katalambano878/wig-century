@@ -1,12 +1,46 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { buildMetadata } from '@/lib/seo';
+
+const POST_META: Record<string, { title: string; description: string }> = {
+  '1': {
+    title: 'The Ultimate Guide to Online Shopping in Ghana',
+    description:
+      'How to shop online safely and confidently in Ghana — payment methods, delivery, returns and trust signals to look for.',
+  },
+  '2': {
+    title: '10 Must-Have Products for Your Home This Season',
+    description:
+      'Carefully selected home essentials to elevate your space — from smart lighting to premium bedding and indoor plants.',
+  },
+  '3': {
+    title: "How to Choose Quality Products: A Buyer's Guide",
+    description:
+      'Identify genuine quality in any product. Material, construction, brand reputation and price-to-value tips for smarter buying.',
+  },
+};
 
 export async function generateStaticParams() {
-  return [
-    { id: '1' },
-    { id: '2' },
-    { id: '3' },
-  ];
+  return [{ id: '1' }, { id: '2' }, { id: '3' }];
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const meta = POST_META[id];
+  if (!meta) {
+    return buildMetadata({ title: 'Article', path: `/blog/${id}`, noindex: true });
+  }
+  return buildMetadata({
+    title: meta.title,
+    description: meta.description,
+    path: `/blog/${id}`,
+    type: 'article',
+  });
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ id: string }> }) {

@@ -61,9 +61,9 @@ const nextConfig: NextConfig = {
           { key: 'Service-Worker-Allowed', value: '/' }
         ]
       },
-      // Manifest
+      // PWA web manifest (served by app/manifest.ts at /manifest.webmanifest)
       {
-        source: '/manifest.json',
+        source: '/manifest.webmanifest',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=3600' },
           { key: 'Content-Type', value: 'application/manifest+json' }

@@ -1,3 +1,13 @@
+import type { Metadata } from 'next';
+import { buildMetadata } from '@/lib/seo';
+
+export const metadata: Metadata = buildMetadata({
+  title: 'Privacy Policy',
+  description:
+    'Learn how Wig Century collects, uses and safeguards your personal information when you shop with us.',
+  path: '/privacy',
+});
+
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-white">

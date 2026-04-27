@@ -1,4 +1,14 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
+import { buildMetadata } from '@/lib/seo';
+
+export const metadata: Metadata = buildMetadata({
+  title: 'Shipping & Delivery',
+  description:
+    'Wig Century delivery options, timelines and rates across Ghana — including Accra same-day, nationwide express and pickup.',
+  path: '/shipping',
+  keywords: ['wig delivery Ghana', 'shipping Accra', 'wig courier', 'fast delivery wigs'],
+});
 
 export default function ShippingPage() {
   const deliveryOptions = [

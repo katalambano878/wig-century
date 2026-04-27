@@ -1,22 +1,40 @@
-import { MetadataRoute } from 'next';
+import type { MetadataRoute } from 'next';
+import { SITE } from '@/lib/seo';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://example.com';
-
   return {
     rules: [
       {
         userAgent: '*',
-        allow: '/',
+        allow: ['/'],
         disallow: [
+          '/admin',
           '/admin/',
           '/api/',
+          '/account',
+          '/account/',
           '/checkout',
           '/cart',
-          '/account/',
+          '/wishlist',
+          '/order-success',
+          '/order-tracking',
+          '/pay/',
+          '/auth/reset-password',
+          '/auth/forgot-password',
+          '/maintenance',
+          '/offline',
+          '/support/',
+          '/pwa-settings',
         ],
       },
+      // Block AI crawlers from training on the storefront content.
+      { userAgent: 'GPTBot', disallow: ['/'] },
+      { userAgent: 'CCBot', disallow: ['/'] },
+      { userAgent: 'Google-Extended', disallow: ['/'] },
+      { userAgent: 'anthropic-ai', disallow: ['/'] },
+      { userAgent: 'ClaudeBot', disallow: ['/'] },
     ],
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: `${SITE.url}/sitemap.xml`,
+    host: SITE.url,
   };
 }
