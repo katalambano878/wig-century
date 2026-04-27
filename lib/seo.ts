@@ -6,7 +6,10 @@ export const SITE = {
   tagline: 'Premium Wigs · Bundles · Hair Care',
   description:
     'Shop premium wigs, hair bundles, lace closures and hair-care essentials at Wig Century. Curated styles, trusted quality, delivered with care.',
-  url: (process.env.NEXT_PUBLIC_APP_URL || 'https://wigcentury.com').replace(/\/$/, ''),
+  url: (() => {
+    const env = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '');
+    return env && !env.includes('localhost') ? env : 'https://wigcentury.com';
+  })(),
   locale: 'en_GH',
   countryCode: 'GH',
   currency: 'GHS',
