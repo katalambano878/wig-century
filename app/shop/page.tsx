@@ -269,12 +269,12 @@ function ShopContent() {
                 </span>
               </h1>
               <p className="text-slate-500 text-sm md:text-base font-light leading-relaxed mt-5 max-w-md">
-                Thrifted tops, African print wears, watches, sunglasses &amp; more — all curated and priced for you.
+                Wigs, bundles, closures &amp; hair care essentials — all curated and priced for you.
               </p>
             </div>
 
-            {/* Stats */}
-            <div className="flex items-center gap-8 lg:gap-10 lg:pb-1.5">
+            {/* Stats — hidden on mobile, visible from sm and up */}
+            <div className="hidden sm:flex items-center gap-8 lg:gap-10 lg:pb-1.5">
               {[
                 { value: heroStats.totalItems > 0 ? `${heroStats.totalItems}+` : '—', label: 'Items' },
                 { value: heroStats.totalCategories > 0 ? `${heroStats.totalCategories}+` : '—', label: 'Styles' },
