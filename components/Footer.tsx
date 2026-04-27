@@ -98,9 +98,16 @@ export default function Footer() {
         {/* Bottom strip */}
         <div className="border-t border-slate-800/70 pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <p className="text-slate-500 text-xs">
-            &copy; {year} <span className="text-slate-300 font-semibold">{siteName}</span>. Made with
-            <i className="ri-heart-fill text-blue-400 mx-1" />
-            in Ghana.
+            &copy; {year} <span className="text-slate-300 font-semibold">{siteName}</span>. Powered By{' '}
+            <a
+              href="https://doctorbarns.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-300 font-semibold hover:text-blue-400 transition-colors underline-offset-2 hover:underline"
+            >
+              Doctor Barns Tech
+            </a>
+            .
           </p>
 
           <div className="flex items-center gap-2">
