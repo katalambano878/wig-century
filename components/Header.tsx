@@ -124,7 +124,7 @@ export default function Header() {
                 <img
                   src={headerLogo}
                   alt={siteName}
-                  className="h-7 md:h-[34px] w-auto object-contain transition-opacity duration-300 hover:opacity-80"
+                  className="h-8 md:h-9 w-auto max-w-[200px] sm:max-w-[240px] object-contain object-left transition-opacity duration-300 hover:opacity-80"
                 />
               </Link>
             </div>
@@ -348,7 +348,11 @@ export default function Header() {
             {/* Top bar */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4">
               <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>
-                <img src={headerLogo} alt={siteName} className="h-7 w-auto object-contain" />
+                <img
+                  src={headerLogo}
+                  alt={siteName}
+                  className="h-8 w-auto max-w-[200px] object-contain object-left"
+                />
               </Link>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}

@@ -60,9 +60,13 @@ export default function AdminLoginPage() {
 
         {/* Logo / brand */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 mb-5">
+          <div className="inline-flex items-center justify-center px-5 py-3 rounded-2xl bg-black/50 border border-slate-800 mb-5">
             <Link href="/">
-              <img src="/logo.png" alt="Wig Century" className="h-8 w-8 rounded-xl object-cover" />
+              <img
+                src="/logo.png"
+                alt="Wig Century"
+                className="h-10 w-auto max-w-[220px] object-contain"
+              />
             </Link>
           </div>
           <div className="flex items-center justify-center gap-3 mb-1">
