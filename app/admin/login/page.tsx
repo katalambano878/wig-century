@@ -60,12 +60,12 @@ export default function AdminLoginPage() {
 
         {/* Logo / brand */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center px-5 py-3 rounded-2xl bg-black/50 border border-slate-800 mb-5">
+          <div className="inline-flex items-center justify-center mb-5">
             <Link href="/">
               <img
                 src="/logo.png"
                 alt="Wig Century"
-                className="h-10 w-auto max-w-[220px] object-contain"
+                className="h-16 w-auto max-w-[260px] object-contain drop-shadow-[0_8px_24px_rgba(59,130,246,0.35)]"
               />
             </Link>
           </div>

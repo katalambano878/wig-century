@@ -124,7 +124,7 @@ export default function Header() {
                 <img
                   src={headerLogo}
                   alt={siteName}
-                  className="h-8 md:h-9 w-auto max-w-[200px] sm:max-w-[240px] object-contain object-left transition-opacity duration-300 hover:opacity-80"
+                  className="h-11 md:h-12 w-auto max-w-[180px] sm:max-w-[220px] object-contain object-left transition-opacity duration-300 hover:opacity-80"
                 />
               </Link>
             </div>
@@ -351,7 +351,7 @@ export default function Header() {
                 <img
                   src={headerLogo}
                   alt={siteName}
-                  className="h-8 w-auto max-w-[200px] object-contain object-left"
+                  className="h-11 w-auto max-w-[200px] object-contain object-left"
                 />
               </Link>
               <button
