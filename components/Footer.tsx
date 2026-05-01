@@ -110,17 +110,29 @@ export default function Footer() {
             .
           </p>
 
-          <div className="flex items-center gap-2">
-            {['ri-visa-line', 'ri-mastercard-line', 'ri-paypal-line', 'ri-smartphone-line'].map(
-              (icon, i) => (
-                <div
-                  key={i}
-                  className="w-9 h-6 rounded-md bg-slate-900/60 border border-slate-800 flex items-center justify-center hover:border-blue-400/40 transition-colors"
-                >
-                  <i className={`${icon} text-slate-400 text-sm`} />
-                </div>
-              )
-            )}
+          <div className="flex items-center gap-4">
+            <Link
+              href="/admin/login"
+              className="group inline-flex items-center gap-1.5 text-[10px] font-bold tracking-[0.25em] uppercase text-slate-500 hover:text-blue-400 transition-colors"
+            >
+              <i className="ri-shield-user-line text-sm" />
+              <span>Admin</span>
+            </Link>
+
+            <div className="hidden sm:block w-px h-4 bg-slate-800" />
+
+            <div className="flex items-center gap-2">
+              {['ri-visa-line', 'ri-mastercard-line', 'ri-paypal-line', 'ri-smartphone-line'].map(
+                (icon, i) => (
+                  <div
+                    key={i}
+                    className="w-9 h-6 rounded-md bg-slate-900/60 border border-slate-800 flex items-center justify-center hover:border-blue-400/40 transition-colors"
+                  >
+                    <i className={`${icon} text-slate-400 text-sm`} />
+                  </div>
+                )
+              )}
+            </div>
           </div>
         </div>
       </div>
