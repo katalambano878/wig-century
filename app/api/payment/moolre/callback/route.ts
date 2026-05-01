@@ -75,14 +75,31 @@ export async function POST(req: Request) {
         // ============================================================
         const expectedSecret = process.env.MOOLRE_CALLBACK_SECRET;
         if (expectedSecret) {
-            // If we have a configured secret, the callback MUST match it
-            if (!body.secret || body.secret !== expectedSecret) {
-                console.error('[Callback] Secret mismatch or missing! Rejecting callback.');
-                return NextResponse.json({ success: false, message: 'Invalid callback signature' }, { status: 403 });
+            const receivedSecret = body.secret;
+            if (!receivedSecret || receivedSecret !== expectedSecret) {
+                // Log enough info to debug from Vercel logs WITHOUT
+                // leaking the full secret values.
+                const mask = (s: any) =>
+                    typeof s === 'string' && s.length > 8
+                        ? `${s.slice(0, 4)}…${s.slice(-4)} (len=${s.length})`
+                        : `<missing or short> (len=${typeof s === 'string' ? s.length : 0})`;
+                console.error(
+                    '[Callback] Secret mismatch! Received',
+                    mask(receivedSecret),
+                    'but MOOLRE_CALLBACK_SECRET is',
+                    mask(expectedSecret),
+                    '— update the env var in Vercel to match the value shown in Moolre → API → Security for this account.'
+                );
+                return NextResponse.json(
+                    { success: false, message: 'Invalid callback signature' },
+                    { status: 403 }
+                );
             }
         } else {
             // Log a warning if no secret is configured — this should be fixed
-            console.warn('[Callback] WARNING: MOOLRE_CALLBACK_SECRET not configured. Callback origin cannot be verified.');
+            console.warn(
+                '[Callback] WARNING: MOOLRE_CALLBACK_SECRET not configured. Accepting callback without origin verification — set it in production!'
+            );
         }
 
         // ============================================================
