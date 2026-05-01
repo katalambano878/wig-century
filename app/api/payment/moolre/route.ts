@@ -22,7 +22,7 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { orderId, customerEmail, redirectUrl } = body;
+        const { orderId, customerEmail } = body;
 
         if (!orderId || typeof orderId !== 'string') {
             return NextResponse.json({ success: false, message: 'Missing or invalid orderId' }, { status: 400 });
@@ -41,58 +41,25 @@ export async function POST(req: Request) {
             .from('orders')
             .select('id, order_number, total, email, payment_status');
 
-        const { data: order, error: orderError } = isUUID
-            ? await query.eq('id', orderId).single()
-            : await query.eq('order_number', orderId).single();
+        if (isUUID) {
+            query.or(`id.eq.${orderId},order_number.eq.${orderId}`);
+        } else {
+            query.eq('order_number', orderId);
+        }
+
+        const { data: order, error: orderError } = await query.single();
 
         if (orderError || !order) {
             console.error('[Payment] Order not found:', orderId);
             return NextResponse.json({ success: false, message: 'Order not found' }, { status: 404 });
         }
 
+        // Don't allow payment for already-paid orders
         if (order.payment_status === 'paid') {
             return NextResponse.json({ success: false, message: 'Order is already paid' }, { status: 400 });
         }
 
-        // Stock validation: block payment only if items are confirmed out of stock.
-        // Query failures are logged but don't block payment (avoids breaking
-        // the normal checkout flow where order_items may not be committed yet).
-        try {
-            const { data: orderItems, error: itemsError } = await supabaseAdmin
-                .from('order_items')
-                .select('quantity, product_id, products(name, quantity, is_active)')
-                .eq('order_id', order.id);
-
-            if (itemsError) {
-                console.warn('[Payment] Stock check query failed (non-blocking):', itemsError.message);
-            } else if (orderItems && orderItems.length > 0) {
-                const outOfStock: string[] = [];
-                for (const item of orderItems) {
-                    const product = (item as any).products;
-                    if (!product) continue;
-                    if (!product.is_active) {
-                        outOfStock.push(`${product.name} is no longer available`);
-                    } else if (product.quantity < item.quantity) {
-                        outOfStock.push(
-                            product.quantity === 0
-                                ? `${product.name} is out of stock`
-                                : `${product.name} — only ${product.quantity} left (you ordered ${item.quantity})`
-                        );
-                    }
-                }
-                if (outOfStock.length > 0) {
-                    console.log('[Payment] Blocked — out of stock items:', outOfStock);
-                    return NextResponse.json({
-                        success: false,
-                        message: `Some items are out of stock: ${outOfStock.join('; ')}`,
-                        outOfStock,
-                    }, { status: 409 });
-                }
-            }
-        } catch (stockErr: any) {
-            console.warn('[Payment] Stock check exception (non-blocking):', stockErr.message);
-        }
-
+        // Use the database amount, NOT the client-provided amount
         const amount = Number(order.total);
         if (!amount || amount <= 0) {
             return NextResponse.json({ success: false, message: 'Invalid order amount' }, { status: 400 });
@@ -103,15 +70,6 @@ export async function POST(req: Request) {
         const requestUrl = new URL(req.url);
         const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || requestUrl.origin).replace(/\/+$/, '');
 
-        // Optional override for mobile deep-link return.
-        const defaultRedirectUrl = `${baseUrl}/order-success?order=${orderRef}&payment_success=true`;
-        const allowedPrefixes = ['https://', 'wigcentury://', 'exp://', 'exps://'];
-        const safeRedirectUrl =
-            typeof redirectUrl === 'string' &&
-                allowedPrefixes.some((prefix) => redirectUrl.startsWith(prefix))
-                ? redirectUrl
-                : defaultRedirectUrl;
-
         // Generate a unique external reference for Moolre
         const uniqueRef = `${orderRef}-R${Date.now()}`;
 
@@ -119,10 +77,10 @@ export async function POST(req: Request) {
         const payload = {
             type: 1,
             amount: amount.toString(),
-            email: process.env.MOOLRE_MERCHANT_EMAIL || 'admin@wigcentury.com',
+            email: process.env.MOOLRE_MERCHANT_EMAIL || 'admin@yourdomain.com',
             externalref: uniqueRef,
             callback: `${baseUrl}/api/payment/moolre/callback`,
-            redirect: safeRedirectUrl,
+            redirect: `${baseUrl}/order-success?order=${orderRef}&payment_success=true`,
             reusable: "0",
             currency: "GHS",
             accountnumber: process.env.MOOLRE_ACCOUNT_NUMBER,
@@ -148,12 +106,7 @@ export async function POST(req: Request) {
         console.log('[Payment] Response status:', result.status, '| Has URL:', !!result.data?.authorization_url);
 
         if (result.status === 1 && result.data?.authorization_url) {
-            return NextResponse.json({
-                success: true,
-                url: result.data.authorization_url,
-                reference: result.data.reference,
-                externalRef: uniqueRef
-            });
+            return NextResponse.json({ success: true, url: result.data.authorization_url, reference: result.data.reference });
         } else {
             return NextResponse.json({ success: false, message: result.message || 'Failed to generate payment link' }, { status: 400 });
         }

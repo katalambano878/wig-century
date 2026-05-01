@@ -44,7 +44,6 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [orderViewTab, setOrderViewTab] = useState<'confirmed' | 'abandoned'>('confirmed');
   const [sendingPaymentLink, setSendingPaymentLink] = useState<string | null>(null);
-  const [verifyingPayment, setVerifyingPayment] = useState<string | null>(null);
   const [orderStats, setOrderStats] = useState<OrderStats[]>([
     { label: 'All Orders', count: 0, status: 'all' },
     { label: 'Pending', count: 0, status: 'pending' },
@@ -307,41 +306,6 @@ export default function AdminOrdersPage() {
     }
   };
 
-  // Force-verify a pending order against Moolre's API. Useful when the
-  // callback failed (e.g., secret mismatch) but the customer actually
-  // paid. Hits /api/payment/moolre/verify which independently checks
-  // Moolre's /embed/status endpoint with our authenticated credentials.
-  const handleVerifyPayment = async (order: Order) => {
-    if (!order.order_number) {
-      alert('Order is missing an order number, cannot verify.');
-      return;
-    }
-    setVerifyingPayment(order.id);
-    try {
-      const response = await fetch('/api/payment/moolre/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderNumber: order.order_number })
-      });
-      const result = await response.json();
-
-      if (result.success && result.payment_status === 'paid') {
-        alert(`Payment confirmed! Order ${order.order_number} is now marked as paid.`);
-        await fetchOrders();
-      } else if (result.success) {
-        alert(result.message || 'Order updated.');
-        await fetchOrders();
-      } else {
-        alert(result.message || 'Moolre has not confirmed this payment yet. If the customer paid, ask them to share the confirmation SMS, then try again.');
-      }
-    } catch (error) {
-      console.error('Error verifying payment:', error);
-      alert('Failed to verify payment. Please try again.');
-    } finally {
-      setVerifyingPayment(null);
-    }
-  };
-
   const filteredOrders = orders.filter(order => {
     const customerName = getCustomerName(order).toLowerCase();
     const customerEmail = getCustomerEmail(order).toLowerCase();
@@ -437,11 +401,7 @@ export default function AdminOrdersPage() {
             <div>
               <p className="text-sm font-semibold text-blue-800">Abandoned Carts</p>
               <p className="text-sm text-blue-700 mt-1">
-                These orders were created but payment was not completed. Tap the green
-                <i className="ri-shield-check-line mx-1"></i>
-                shield to force-verify with Moolre (use this if a customer paid but the order is still pending), or the blue
-                <i className="ri-send-plane-line mx-1"></i>
-                paper plane to resend the payment link.
+                These orders were created but payment was not completed. You can resend payment links to customers.
               </p>
             </div>
           </div>
@@ -645,32 +605,18 @@ export default function AdminOrdersPage() {
                           <i className="ri-eye-line text-lg w-4 h-4 flex items-center justify-center"></i>
                         </Link>
                         {orderViewTab === 'abandoned' && order.payment_status !== 'paid' && (
-                          <>
-                            <button
-                              onClick={() => handleVerifyPayment(order)}
-                              disabled={verifyingPayment === order.id}
-                              className="w-8 h-8 flex items-center justify-center text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                              title="Verify payment with Moolre (force-check this order)"
-                            >
-                              {verifyingPayment === order.id ? (
-                                <i className="ri-loader-4-line text-lg w-4 h-4 flex items-center justify-center animate-spin"></i>
-                              ) : (
-                                <i className="ri-shield-check-line text-lg w-4 h-4 flex items-center justify-center"></i>
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleResendPaymentLink(order)}
-                              disabled={sendingPaymentLink === order.id}
-                              className="w-8 h-8 flex items-center justify-center text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                              title="Resend Payment Link"
-                            >
-                              {sendingPaymentLink === order.id ? (
-                                <i className="ri-loader-4-line text-lg w-4 h-4 flex items-center justify-center animate-spin"></i>
-                              ) : (
-                                <i className="ri-send-plane-line text-lg w-4 h-4 flex items-center justify-center"></i>
-                              )}
-                            </button>
-                          </>
+                          <button
+                            onClick={() => handleResendPaymentLink(order)}
+                            disabled={sendingPaymentLink === order.id}
+                            className="w-8 h-8 flex items-center justify-center text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                            title="Resend Payment Link"
+                          >
+                            {sendingPaymentLink === order.id ? (
+                              <i className="ri-loader-4-line text-lg w-4 h-4 flex items-center justify-center animate-spin"></i>
+                            ) : (
+                              <i className="ri-send-plane-line text-lg w-4 h-4 flex items-center justify-center"></i>
+                            )}
+                          </button>
                         )}
                         <button
                           onClick={() => handlePrintInvoice(order.id)}

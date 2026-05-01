@@ -189,37 +189,6 @@ export default function OrderDetailClient({ orderId }: OrderDetailClientProps) {
   };
 
   const [resendingNotification, setResendingNotification] = useState(false);
-  const [verifyingPayment, setVerifyingPayment] = useState(false);
-
-  // Force-verify a pending Moolre payment. Useful when the gateway
-  // callback failed (e.g., env-var mismatch) but the customer paid.
-  const handleVerifyPayment = async () => {
-    if (!order?.order_number) return;
-    setVerifyingPayment(true);
-    try {
-      const response = await fetch('/api/payment/moolre/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderNumber: order.order_number })
-      });
-      const result = await response.json();
-
-      if (result.success && result.payment_status === 'paid') {
-        alert(`Payment confirmed! Order ${order.order_number} is now marked as paid.`);
-        await fetchOrderDetails();
-      } else if (result.success) {
-        alert(result.message || 'Order updated.');
-        await fetchOrderDetails();
-      } else {
-        alert(result.message || 'Moolre has not confirmed this payment yet. Ask the customer for the confirmation SMS, then try again.');
-      }
-    } catch (err) {
-      console.error('Error verifying payment:', err);
-      alert('Failed to verify payment. Please try again.');
-    } finally {
-      setVerifyingPayment(false);
-    }
-  };
 
   const handleResendNotification = async () => {
     if (!order) return;
@@ -597,27 +566,6 @@ export default function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                     {order.metadata?.moolre_reference || order.payment_transaction_id || 'N/A'}
                   </span>
                 </div>
-
-                {order.payment_status !== 'paid' && (order.payment_method === 'moolre' || !order.payment_method) && (
-                  <button
-                    onClick={handleVerifyPayment}
-                    disabled={verifyingPayment}
-                    className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg font-semibold transition-colors disabled:opacity-50 flex items-center justify-center"
-                    title="Re-check this transaction directly with Moolre's API"
-                  >
-                    {verifyingPayment ? (
-                      <>
-                        <i className="ri-loader-4-line animate-spin mr-2"></i>
-                        Verifying with Moolre...
-                      </>
-                    ) : (
-                      <>
-                        <i className="ri-shield-check-line mr-2"></i>
-                        Verify Payment with Moolre
-                      </>
-                    )}
-                  </button>
-                )}
               </div>
             </div>
 
