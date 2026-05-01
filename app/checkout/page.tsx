@@ -673,6 +673,12 @@ export default function CheckoutPage() {
               shipping={shippingCost}
               tax={tax}
               total={total}
+              shippingLabel={deliveryMethod === 'doorstep' ? 'At a Cost' : undefined}
+              totalLabel={
+                deliveryMethod === 'doorstep'
+                  ? `GH₵ ${total.toFixed(2)} + delivery`
+                  : undefined
+              }
             />
           </div>
         </div>

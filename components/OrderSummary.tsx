@@ -13,9 +13,26 @@ interface OrderSummaryProps {
   shipping: number;
   tax: number;
   total: number;
+  /**
+   * Optional override for the right-hand shipping cell. If provided,
+   * we render this string (and skip the auto FREE / GH₵ amount).
+   * Useful for delivery options where the price is unknown at checkout
+   * time (e.g. "At a Cost" — quoted manually after the order).
+   */
+  shippingLabel?: string;
+  /** Optional override for the total cell — e.g. when shipping is TBD. */
+  totalLabel?: string;
 }
 
-export default function OrderSummary({ items, subtotal, shipping, tax, total }: OrderSummaryProps) {
+export default function OrderSummary({
+  items,
+  subtotal,
+  shipping,
+  tax,
+  total,
+  shippingLabel,
+  totalLabel,
+}: OrderSummaryProps) {
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 sticky top-4">
       <h2 className="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
@@ -49,8 +66,12 @@ export default function OrderSummary({ items, subtotal, shipping, tax, total }: 
         </div>
         <div className="flex justify-between text-gray-700">
           <span>Shipping</span>
-          <span className="font-semibold">
-            {shipping === 0 ? 'FREE' : `GH₵ ${shipping.toFixed(2)}`}
+          <span className={`font-semibold ${shippingLabel ? 'text-blue-600' : ''}`}>
+            {shippingLabel
+              ? shippingLabel
+              : shipping === 0
+                ? 'FREE'
+                : `GH₵ ${shipping.toFixed(2)}`}
           </span>
         </div>
 
@@ -59,8 +80,15 @@ export default function OrderSummary({ items, subtotal, shipping, tax, total }: 
       <div className="border-t border-gray-200 mt-4 pt-4">
         <div className="flex justify-between items-center">
           <span className="text-lg font-bold text-gray-900">Total</span>
-          <span className="text-2xl font-bold text-slate-700">GH₵ {total.toFixed(2)}</span>
+          <span className="text-2xl font-bold text-slate-700">
+            {totalLabel ? totalLabel : `GH₵ ${total.toFixed(2)}`}
+          </span>
         </div>
+        {totalLabel && (
+          <p className="text-xs text-gray-500 mt-2 text-right">
+            Delivery cost added separately after order is confirmed.
+          </p>
+        )}
       </div>
 
       <div className="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
