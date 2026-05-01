@@ -81,38 +81,54 @@ export async function POST(req: Request) {
             }, { status: 503 });
         }
 
-        try {
-            const checkResponse = await fetch('https://api.moolre.com/embed/status', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-API-USER': process.env.MOOLRE_API_USER,
-                    'X-API-PUBKEY': process.env.MOOLRE_API_PUBKEY
-                },
-                body: JSON.stringify({ externalref: orderNumber })
-            });
+        // Build candidate references: try the saved Moolre externalref
+        // (with the -R{timestamp} retry suffix) first, then fall back to
+        // the bare order number for older orders that pre-date metadata
+        // persistence.
+        const candidateRefs: string[] = [];
+        const savedRef = (order.metadata as any)?.moolre_externalref;
+        if (savedRef && typeof savedRef === 'string') candidateRefs.push(savedRef);
+        if (!candidateRefs.includes(orderNumber)) candidateRefs.push(orderNumber);
 
-            const checkResult = await checkResponse.json();
-            console.log('[Verify] Moolre API response:', JSON.stringify(checkResult));
+        for (const ref of candidateRefs) {
+            try {
+                const checkResponse = await fetch('https://api.moolre.com/embed/status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-USER': process.env.MOOLRE_API_USER,
+                        'X-API-PUBKEY': process.env.MOOLRE_API_PUBKEY
+                    },
+                    body: JSON.stringify({ externalref: ref })
+                });
 
-            // Strict verification: require explicit success status
-            const statusStr = String(checkResult.data?.status || '').toLowerCase();
-            moolreApiVerified =
-                (checkResult.status === 1 && checkResult.data) &&
-                (statusStr === 'success' || statusStr === 'successful' || statusStr === 'completed' || statusStr === 'paid');
+                const checkResult = await checkResponse.json();
+                console.log('[Verify] Moolre API response for', ref, ':', JSON.stringify(checkResult).substring(0, 300));
 
-            // Also verify the amount matches
-            if (moolreApiVerified && checkResult.data?.amount) {
-                const paidAmount = parseFloat(checkResult.data.amount);
-                const expectedAmount = Number(order.total);
-                if (Math.abs(paidAmount - expectedAmount) > 0.01) {
-                    console.error('[Verify] AMOUNT MISMATCH! Expected:', expectedAmount, 'Got:', paidAmount);
-                    moolreApiVerified = false;
+                // Strict verification: require explicit success status
+                const statusStr = String(checkResult.data?.status || '').toLowerCase();
+                const refVerified =
+                    (checkResult.status === 1 && checkResult.data) &&
+                    (statusStr === 'success' || statusStr === 'successful' || statusStr === 'completed' || statusStr === 'paid');
+
+                if (refVerified) {
+                    moolreApiVerified = true;
+
+                    // Also verify the amount matches
+                    if (checkResult.data?.amount) {
+                        const paidAmount = parseFloat(checkResult.data.amount);
+                        const expectedAmount = Number(order.total);
+                        if (Math.abs(paidAmount - expectedAmount) > 0.01) {
+                            console.error('[Verify] AMOUNT MISMATCH! Expected:', expectedAmount, 'Got:', paidAmount);
+                            moolreApiVerified = false;
+                            continue;
+                        }
+                    }
+                    break;
                 }
+            } catch (moolreError: any) {
+                console.warn('[Verify] Moolre API check failed for', ref, ':', moolreError.message);
             }
-
-        } catch (moolreError: any) {
-            console.warn('[Verify] Moolre API check failed:', moolreError.message);
         }
 
         // 4. Only proceed if Moolre API confirmed payment

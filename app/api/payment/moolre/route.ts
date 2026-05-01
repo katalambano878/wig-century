@@ -73,6 +73,30 @@ export async function POST(req: Request) {
         // Generate a unique external reference for Moolre
         const uniqueRef = `${orderRef}-R${Date.now()}`;
 
+        // Persist the externalref on the order so the /verify endpoint
+        // and the callback fallback can reliably look it up on Moolre's side.
+        try {
+            const { data: existingOrder } = await supabaseAdmin
+                .from('orders')
+                .select('metadata')
+                .eq('id', order.id)
+                .single();
+            const existingMeta = (existingOrder?.metadata as Record<string, any>) || {};
+            await supabaseAdmin
+                .from('orders')
+                .update({
+                    metadata: {
+                        ...existingMeta,
+                        moolre_externalref: uniqueRef,
+                        payment_method: 'moolre',
+                        last_payment_init_at: new Date().toISOString(),
+                    },
+                })
+                .eq('id', order.id);
+        } catch (metaError: any) {
+            console.warn('[Payment] Failed to persist externalref:', metaError?.message);
+        }
+
         // Moolre Payload
         const payload = {
             type: 1,
