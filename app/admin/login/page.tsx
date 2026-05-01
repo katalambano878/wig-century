@@ -64,87 +64,94 @@ export default function AdminLoginPage() {
   return (
     <main className="min-h-screen flex bg-white">
       {/* ── LEFT — editorial brand panel ───────────────────────────── */}
-      <aside className="hidden lg:flex lg:w-[48%] relative bg-slate-950 overflow-hidden">
+      <aside className="hidden lg:flex lg:flex-col lg:w-[48%] relative bg-slate-950 overflow-hidden">
         <Image
           src="/hero_portrait.jpg"
           alt=""
           fill
           priority
-          quality={70}
+          quality={75}
           sizes="48vw"
-          className="object-cover object-center opacity-40"
+          className="object-cover object-center"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/80 via-slate-950/85 to-blue-950/70" />
+        {/* Soft, layered overlay — keeps the model visible but ensures
+            white text remains readable. Bottom is darker so the hero
+            copy reads cleanly while the top stays atmospheric. */}
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-slate-950/55 to-slate-950/85" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/30 via-transparent to-blue-950/30" />
 
-        {/* Subtle grid + radial glow */}
-        <div
-          className="absolute inset-0 opacity-[0.04] mix-blend-overlay"
-          style={{
-            backgroundImage:
-              'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
-            backgroundSize: '36px 36px',
-          }}
-        />
-        <div className="absolute -top-40 -left-40 w-[420px] h-[420px] bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-32 right-10 w-[360px] h-[360px] bg-blue-400/10 rounded-full blur-3xl pointer-events-none" />
+        {/* Decorative blue glow */}
+        <div className="absolute -top-32 -left-32 w-[420px] h-[420px] bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-40 right-0 w-[420px] h-[420px] bg-blue-400/10 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Top bar */}
-        <div className="relative z-10 w-full p-10 flex items-center justify-between">
+        {/* TOP — brand bar */}
+        <header className="relative z-10 flex items-center justify-between px-10 pt-10">
           <Link href="/" className="flex items-center gap-3 group">
             <Image
               src="/logo.png"
               alt="Wig Century"
-              width={120}
-              height={36}
-              className="h-9 w-auto object-contain object-left drop-shadow-[0_4px_16px_rgba(59,130,246,0.45)]"
+              width={140}
+              height={42}
+              className="h-10 w-auto object-contain object-left drop-shadow-[0_6px_20px_rgba(59,130,246,0.45)]"
             />
           </Link>
-          <div className="flex items-center gap-2 text-[9px] font-black tracking-[0.4em] uppercase text-blue-300/80">
+          <div className="flex items-center gap-2 text-[9px] font-black tracking-[0.4em] uppercase text-blue-300">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
             </span>
             System Online
           </div>
-        </div>
+        </header>
 
-        {/* Hero copy */}
-        <div className="relative z-10 mt-auto p-10 pb-16">
-          <p className="text-[9px] font-black tracking-[0.55em] uppercase text-blue-400 mb-5">
-            Wig Century · Admin
-          </p>
+        {/* MIDDLE — flexible spacer pushes hero copy near the bottom */}
+        <div className="flex-1" />
+
+        {/* HERO COPY */}
+        <div className="relative z-10 px-10">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-8 h-px bg-blue-400" />
+            <p className="text-[9px] font-black tracking-[0.55em] uppercase text-blue-400">
+              Wig Century · Admin
+            </p>
+          </div>
           <h1
-            className="font-serif italic text-white leading-[0.95]"
-            style={{ fontSize: 'clamp(2.6rem, 4.2vw, 4.5rem)' }}
+            className="font-serif italic text-white leading-[0.95] drop-shadow-[0_4px_30px_rgba(0,0,0,0.5)]"
+            style={{ fontSize: 'clamp(2.8rem, 4.6vw, 5rem)' }}
           >
             Command<br />
             <span className="text-blue-300">Centre.</span>
           </h1>
-          <p className="text-slate-300/80 text-sm font-light mt-6 max-w-sm leading-relaxed">
+          <p className="text-slate-200/90 text-sm font-light mt-6 max-w-sm leading-relaxed">
             Manage products, orders, customers and content. Everything that runs Wig Century, in one place.
           </p>
+        </div>
 
-          <div className="mt-10 grid grid-cols-3 gap-6 max-w-md">
+        {/* CAPABILITY TILES */}
+        <div className="relative z-10 px-10 mt-10">
+          <div className="grid grid-cols-3 gap-5 max-w-md">
             {[
               { label: 'Catalogue', icon: 'ri-stack-line' },
               { label: 'Orders', icon: 'ri-shopping-bag-3-line' },
               { label: 'Customers', icon: 'ri-team-line' },
             ].map((item) => (
               <div key={item.label} className="space-y-2">
-                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/15 backdrop-blur-sm flex items-center justify-center">
                   <i className={`${item.icon} text-blue-300 text-lg`} />
                 </div>
-                <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-slate-400">{item.label}</p>
+                <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-slate-300">
+                  {item.label}
+                </p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Footer strip — bottom edge */}
-        <div className="absolute bottom-0 left-0 right-0 z-10 px-10 py-5 border-t border-white/10 flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.25em] text-slate-500">
+        {/* BOTTOM strip */}
+        <footer className="relative z-10 mt-12 px-10 py-5 border-t border-white/10 flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.25em] text-slate-400">
           <span>v1.0 · Secure</span>
-          <span className="text-slate-400">{time} GMT</span>
-        </div>
+          <span>{time} GMT</span>
+        </footer>
       </aside>
 
       {/* ── RIGHT — form panel ──────────────────────────────────────── */}
