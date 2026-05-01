@@ -303,22 +303,6 @@ export default function CheckoutPage() {
             throw new Error(paymentResult.message || 'Payment initialization failed');
           }
 
-          // Persist Moolre's unique externalRef so the order-success page
-          // can hand it back to /api/payment/moolre/verify. Moolre indexes
-          // the transaction under this ref (e.g. ORD-XXX-R{timestamp}),
-          // not the bare order number.
-          if (paymentResult.externalRef && typeof window !== 'undefined') {
-            try {
-              window.localStorage.setItem(
-                `moolre_extref_${orderNumber}`,
-                paymentResult.externalRef
-              );
-            } catch {
-              // localStorage unavailable — non-fatal, verify falls back
-              // to the bare order number.
-            }
-          }
-
           // Clear cart before redirecting
           clearCart();
 

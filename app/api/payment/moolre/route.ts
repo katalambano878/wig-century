@@ -54,6 +54,45 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, message: 'Order is already paid' }, { status: 400 });
         }
 
+        // Stock validation: block payment only if items are confirmed out of stock.
+        // Query failures are logged but don't block payment (avoids breaking
+        // the normal checkout flow where order_items may not be committed yet).
+        try {
+            const { data: orderItems, error: itemsError } = await supabaseAdmin
+                .from('order_items')
+                .select('quantity, product_id, products(name, quantity, is_active)')
+                .eq('order_id', order.id);
+
+            if (itemsError) {
+                console.warn('[Payment] Stock check query failed (non-blocking):', itemsError.message);
+            } else if (orderItems && orderItems.length > 0) {
+                const outOfStock: string[] = [];
+                for (const item of orderItems) {
+                    const product = (item as any).products;
+                    if (!product) continue;
+                    if (!product.is_active) {
+                        outOfStock.push(`${product.name} is no longer available`);
+                    } else if (product.quantity < item.quantity) {
+                        outOfStock.push(
+                            product.quantity === 0
+                                ? `${product.name} is out of stock`
+                                : `${product.name} — only ${product.quantity} left (you ordered ${item.quantity})`
+                        );
+                    }
+                }
+                if (outOfStock.length > 0) {
+                    console.log('[Payment] Blocked — out of stock items:', outOfStock);
+                    return NextResponse.json({
+                        success: false,
+                        message: `Some items are out of stock: ${outOfStock.join('; ')}`,
+                        outOfStock,
+                    }, { status: 409 });
+                }
+            }
+        } catch (stockErr: any) {
+            console.warn('[Payment] Stock check exception (non-blocking):', stockErr.message);
+        }
+
         const amount = Number(order.total);
         if (!amount || amount <= 0) {
             return NextResponse.json({ success: false, message: 'Invalid order amount' }, { status: 400 });
@@ -65,6 +104,7 @@ export async function POST(req: Request) {
         const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || requestUrl.origin).replace(/\/+$/, '');
 
         // Optional override for mobile deep-link return.
+        // Allow production-safe URLs and Expo dev deep links.
         const defaultRedirectUrl = `${baseUrl}/order-success?order=${orderRef}&payment_success=true`;
         const allowedPrefixes = ['https://', 'wigcentury://', 'exp://', 'exps://'];
         const safeRedirectUrl =

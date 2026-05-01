@@ -58,27 +58,11 @@ function OrderSuccessContent() {
       return;
     }
 
-    // Read the unique externalRef the checkout page stashed before
-    // redirecting to Moolre. This is the ref Moolre indexed the
-    // transaction under, so passing it makes /embed/status lookups
-    // actually find the payment.
-    let savedExternalRef: string | null = null;
-    if (typeof window !== 'undefined') {
-      try {
-        savedExternalRef = window.localStorage.getItem(`moolre_extref_${orderNum}`);
-      } catch {
-        savedExternalRef = null;
-      }
-    }
-
     try {
       const res = await fetch('/api/payment/moolre/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderNumber: orderNum,
-          ...(savedExternalRef ? { externalRef: savedExternalRef } : {}),
-        }),
+        body: JSON.stringify({ orderNumber: orderNum }),
       });
 
       const result = await res.json();
@@ -89,15 +73,6 @@ function OrderSuccessContent() {
           .eq('order_number', orderNum)
           .single();
         if (updated) setOrder(updated);
-
-        // Successfully verified — clean up the stored ref.
-        if (savedExternalRef && typeof window !== 'undefined') {
-          try {
-            window.localStorage.removeItem(`moolre_extref_${orderNum}`);
-          } catch {
-            // ignore
-          }
-        }
       }
     } catch (err) {
       console.error('Payment verification failed:', err);
