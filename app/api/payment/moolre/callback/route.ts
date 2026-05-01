@@ -71,34 +71,34 @@ export async function POST(req: Request) {
         console.log('[Callback] Data keys:', body.data ? Object.keys(body.data).join(', ') : 'no data object');
 
         // ============================================================
-        // SECURITY: Verify callback secret FIRST (mandatory)
+        // SECURITY: Verify callback secret.
+        // If it doesn't match, we don't immediately reject. Instead we
+        // mark the callback as "unverified" and re-check the transaction
+        // directly with Moolre's authenticated /embed/status API before
+        // marking the order paid. This makes the system resilient to
+        // MOOLRE_CALLBACK_SECRET misconfigurations on Vercel while still
+        // requiring real-payment confirmation from Moolre's API.
         // ============================================================
         const expectedSecret = process.env.MOOLRE_CALLBACK_SECRET;
+        let secretVerified = false;
         if (expectedSecret) {
-            const receivedSecret = body.secret;
-            if (!receivedSecret || receivedSecret !== expectedSecret) {
-                // Log enough info to debug from Vercel logs WITHOUT
-                // leaking the full secret values.
+            if (body.secret && body.secret === expectedSecret) {
+                secretVerified = true;
+            } else {
                 const mask = (s: any) =>
                     typeof s === 'string' && s.length > 8
                         ? `${s.slice(0, 4)}…${s.slice(-4)} (len=${s.length})`
                         : `<missing or short> (len=${typeof s === 'string' ? s.length : 0})`;
                 console.error(
-                    '[Callback] Secret mismatch! Received',
-                    mask(receivedSecret),
-                    'but MOOLRE_CALLBACK_SECRET is',
-                    mask(expectedSecret),
-                    '— update the env var in Vercel to match the value shown in Moolre → API → Security for this account.'
-                );
-                return NextResponse.json(
-                    { success: false, message: 'Invalid callback signature' },
-                    { status: 403 }
+                    '[Callback] Secret mismatch — falling back to Moolre API verification.',
+                    'Received', mask(body.secret),
+                    'but MOOLRE_CALLBACK_SECRET is', mask(expectedSecret),
+                    '— update the env var in Vercel → Settings → Environment Variables and redeploy to enable the fast path.'
                 );
             }
         } else {
-            // Log a warning if no secret is configured — this should be fixed
             console.warn(
-                '[Callback] WARNING: MOOLRE_CALLBACK_SECRET not configured. Accepting callback without origin verification — set it in production!'
+                '[Callback] WARNING: MOOLRE_CALLBACK_SECRET not configured. Will rely on Moolre API verification only — set it in production!'
             );
         }
 
@@ -157,7 +157,73 @@ export async function POST(req: Request) {
 
         // Require at least api status OR tx status to be explicitly successful
         // AND the message must not indicate failure
-        const isSuccess = (apiOk || txOk) && !messageStr.includes('fail') && !messageStr.includes('error');
+        let isSuccess = (apiOk || txOk) && !messageStr.includes('fail') && !messageStr.includes('error');
+
+        // ============================================================
+        // FALLBACK VERIFICATION (only when secret check failed)
+        // We refuse to trust the body alone — call Moolre's authenticated
+        // /embed/status API with our server-side credentials to confirm
+        // the transaction. Only proceed if Moolre confirms.
+        // ============================================================
+        if (isSuccess && !secretVerified) {
+            console.warn('[Callback] Secret unverified — re-checking with Moolre API for', merchantOrderRef);
+
+            if (!process.env.MOOLRE_API_USER || !process.env.MOOLRE_API_PUBKEY) {
+                console.error('[Callback] Cannot fall back: Moolre API credentials missing. Rejecting.');
+                return NextResponse.json(
+                    { success: false, message: 'Invalid callback signature and verification unavailable' },
+                    { status: 403 }
+                );
+            }
+
+            // Try the externalref Moolre actually used (the unique
+            // ORD-XXX-R{ts} value), then the bare order ref as a fallback.
+            const fallbackRefs: string[] = [];
+            if (rawExternalRef) fallbackRefs.push(rawExternalRef);
+            if (!fallbackRefs.includes(merchantOrderRef)) fallbackRefs.push(merchantOrderRef);
+
+            let moolreConfirmed = false;
+            for (const ref of fallbackRefs) {
+                try {
+                    const checkResponse = await fetch('https://api.moolre.com/embed/status', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-API-USER': process.env.MOOLRE_API_USER!,
+                            'X-API-PUBKEY': process.env.MOOLRE_API_PUBKEY!,
+                        },
+                        body: JSON.stringify({ externalref: ref }),
+                    });
+                    const checkResult = await checkResponse.json();
+                    const checkStatusStr = String(checkResult.data?.status || '').toLowerCase();
+                    const isOkStatus =
+                        checkResult.status === 1 &&
+                        checkResult.data &&
+                        (checkStatusStr === 'success' || checkStatusStr === 'successful' ||
+                            checkStatusStr === 'completed' || checkStatusStr === 'paid');
+
+                    if (isOkStatus) {
+                        console.log('[Callback] Moolre API confirmed payment for ref:', ref);
+                        moolreConfirmed = true;
+                        break;
+                    }
+                    console.log('[Callback] Moolre API did not confirm', ref, '| status:', checkStatusStr);
+                } catch (apiErr: any) {
+                    console.warn('[Callback] Moolre API fallback error for', ref, ':', apiErr?.message);
+                }
+            }
+
+            if (!moolreConfirmed) {
+                console.error('[Callback] Fallback verification FAILED — rejecting unverified callback for', merchantOrderRef);
+                return NextResponse.json(
+                    { success: false, message: 'Callback signature invalid and Moolre API did not confirm payment' },
+                    { status: 403 }
+                );
+            }
+
+            console.log('[Callback] Fallback verification SUCCESS for', merchantOrderRef);
+            isSuccess = true;
+        }
 
         if (isSuccess) {
             console.log(`[Callback] Payment SUCCESS for Order ${merchantOrderRef}`);

@@ -22,7 +22,7 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { orderId, customerEmail } = body;
+        const { orderId, customerEmail, redirectUrl } = body;
 
         if (!orderId || typeof orderId !== 'string') {
             return NextResponse.json({ success: false, message: 'Missing or invalid orderId' }, { status: 400 });
@@ -41,25 +41,19 @@ export async function POST(req: Request) {
             .from('orders')
             .select('id, order_number, total, email, payment_status');
 
-        if (isUUID) {
-            query.or(`id.eq.${orderId},order_number.eq.${orderId}`);
-        } else {
-            query.eq('order_number', orderId);
-        }
-
-        const { data: order, error: orderError } = await query.single();
+        const { data: order, error: orderError } = isUUID
+            ? await query.eq('id', orderId).single()
+            : await query.eq('order_number', orderId).single();
 
         if (orderError || !order) {
             console.error('[Payment] Order not found:', orderId);
             return NextResponse.json({ success: false, message: 'Order not found' }, { status: 404 });
         }
 
-        // Don't allow payment for already-paid orders
         if (order.payment_status === 'paid') {
             return NextResponse.json({ success: false, message: 'Order is already paid' }, { status: 400 });
         }
 
-        // Use the database amount, NOT the client-provided amount
         const amount = Number(order.total);
         if (!amount || amount <= 0) {
             return NextResponse.json({ success: false, message: 'Invalid order amount' }, { status: 400 });
@@ -70,6 +64,15 @@ export async function POST(req: Request) {
         const requestUrl = new URL(req.url);
         const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || requestUrl.origin).replace(/\/+$/, '');
 
+        // Optional override for mobile deep-link return.
+        const defaultRedirectUrl = `${baseUrl}/order-success?order=${orderRef}&payment_success=true`;
+        const allowedPrefixes = ['https://', 'wigcentury://', 'exp://', 'exps://'];
+        const safeRedirectUrl =
+            typeof redirectUrl === 'string' &&
+                allowedPrefixes.some((prefix) => redirectUrl.startsWith(prefix))
+                ? redirectUrl
+                : defaultRedirectUrl;
+
         // Generate a unique external reference for Moolre
         const uniqueRef = `${orderRef}-R${Date.now()}`;
 
@@ -77,10 +80,10 @@ export async function POST(req: Request) {
         const payload = {
             type: 1,
             amount: amount.toString(),
-            email: process.env.MOOLRE_MERCHANT_EMAIL || 'admin@yourdomain.com',
+            email: process.env.MOOLRE_MERCHANT_EMAIL || 'admin@wigcentury.com',
             externalref: uniqueRef,
             callback: `${baseUrl}/api/payment/moolre/callback`,
-            redirect: `${baseUrl}/order-success?order=${orderRef}&payment_success=true`,
+            redirect: safeRedirectUrl,
             reusable: "0",
             currency: "GHS",
             accountnumber: process.env.MOOLRE_ACCOUNT_NUMBER,
@@ -106,7 +109,12 @@ export async function POST(req: Request) {
         console.log('[Payment] Response status:', result.status, '| Has URL:', !!result.data?.authorization_url);
 
         if (result.status === 1 && result.data?.authorization_url) {
-            return NextResponse.json({ success: true, url: result.data.authorization_url, reference: result.data.reference });
+            return NextResponse.json({
+                success: true,
+                url: result.data.authorization_url,
+                reference: result.data.reference,
+                externalRef: uniqueRef
+            });
         } else {
             return NextResponse.json({ success: false, message: result.message || 'Failed to generate payment link' }, { status: 400 });
         }
