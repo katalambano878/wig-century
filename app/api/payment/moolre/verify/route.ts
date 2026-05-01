@@ -4,22 +4,20 @@ import { sendOrderConfirmation } from '@/lib/notifications';
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/lib/rate-limit';
 
 /**
- * Payment verification endpoint.
- * Called from the order-success page after the user completes payment on Moolre.
- * 
- * SECURITY: We ONLY trust Moolre's API response for payment verification.
- * The `fromRedirect` flag is NO LONGER trusted as proof of payment,
- * because anyone could forge that request.
+ * Payment verification endpoint — the second line of defence when the
+ * webhook is delayed or blocked. Called from /order-success after the
+ * customer returns from Moolre.
+ *
+ * SECURITY: We only trust Moolre's API response. The `payment_success=true`
+ * flag on the URL is never proof of payment on its own.
  */
 export async function POST(req: Request) {
     try {
-        // Rate limiting
         const clientId = getClientIdentifier(req);
-        const rateLimitResult = checkRateLimit(`verify:${clientId}`, RATE_LIMITS.payment);
-
-        if (!rateLimitResult.success) {
+        const rl = checkRateLimit(`moolre-verify:${clientId}`, RATE_LIMITS.payment);
+        if (!rl.success) {
             return NextResponse.json(
-                { success: false, message: 'Too many requests' },
+                { success: false, message: 'Too many verification requests. Please wait.' },
                 { status: 429 }
             );
         }
@@ -27,12 +25,17 @@ export async function POST(req: Request) {
         const { orderNumber, externalRef } = await req.json();
 
         if (!orderNumber || typeof orderNumber !== 'string') {
-            return NextResponse.json({ success: false, message: 'Missing or invalid orderNumber' }, { status: 400 });
+            return NextResponse.json(
+                { success: false, message: 'Missing or invalid orderNumber' },
+                { status: 400 }
+            );
         }
 
-        // Sanitize: support both web + mobile order formats.
         if (!/^[A-Z0-9-]{8,64}$/.test(orderNumber)) {
-            return NextResponse.json({ success: false, message: 'Invalid order number format' }, { status: 400 });
+            return NextResponse.json(
+                { success: false, message: 'Invalid order number format' },
+                { status: 400 }
+            );
         }
 
         const normalizedExternalRef =
@@ -40,17 +43,18 @@ export async function POST(req: Request) {
                 ? externalRef
                 : null;
 
-        // If caller provides external ref, it must belong to this order.
         if (normalizedExternalRef && !normalizedExternalRef.startsWith(orderNumber)) {
-            return NextResponse.json({ success: false, message: 'Invalid external reference for order' }, { status: 400 });
+            return NextResponse.json(
+                { success: false, message: 'Invalid external reference for order' },
+                { status: 400 }
+            );
         }
 
         console.log('[Verify] Checking payment for:', orderNumber);
 
-        // 1. Check current order status
         const { data: order, error: fetchError } = await supabaseAdmin
             .from('orders')
-            .select('id, order_number, payment_status, status, total, email, phone, shipping_address, metadata')
+            .select('id, order_number, payment_status, status, total, email, phone, metadata')
             .eq('order_number', orderNumber)
             .single();
 
@@ -59,112 +63,100 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, message: 'Order not found' }, { status: 404 });
         }
 
-        // Already paid - no action needed
         if (order.payment_status === 'paid') {
-            console.log('[Verify] Order already paid:', orderNumber);
+            console.log('[Verify] Already paid:', orderNumber);
             return NextResponse.json({
                 success: true,
                 status: order.status,
                 payment_status: order.payment_status,
-                message: 'Order already paid'
+                message: 'Order already paid',
             });
         }
 
-        // 2. Verify payment method is moolre
-        if (order.metadata?.payment_method && order.metadata.payment_method !== 'moolre') {
-            return NextResponse.json({
-                success: false,
-                message: 'This order does not use Moolre payment'
-            }, { status: 400 });
-        }
-
-        // 3. ONLY verify with Moolre's API — no more trusting client-side flags
-        let moolreApiVerified = false;
-
         if (!process.env.MOOLRE_API_USER || !process.env.MOOLRE_API_PUBKEY) {
             console.error('[Verify] Missing Moolre API credentials');
-            return NextResponse.json({
-                success: false,
-                status: order.status,
-                payment_status: order.payment_status,
-                message: 'Payment verification unavailable'
-            }, { status: 503 });
+            return NextResponse.json(
+                {
+                    success: false,
+                    status: order.status,
+                    payment_status: order.payment_status,
+                    message: 'Payment verification unavailable',
+                },
+                { status: 503 }
+            );
         }
+
+        let moolreApiVerified = false;
+        let paidAmountFromApi: number | null = null;
 
         try {
             const checkResponse = await fetch('https://api.moolre.com/embed/status', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-API-USER': process.env.MOOLRE_API_USER,
-                    'X-API-PUBKEY': process.env.MOOLRE_API_PUBKEY
+                    'X-API-USER': process.env.MOOLRE_API_USER!,
+                    'X-API-PUBKEY': process.env.MOOLRE_API_PUBKEY!,
                 },
-                body: JSON.stringify({ externalref: normalizedExternalRef || orderNumber })
+                body: JSON.stringify({ externalref: normalizedExternalRef || orderNumber }),
             });
 
             const checkResult = await checkResponse.json();
-            console.log('[Verify] Moolre API response:', JSON.stringify(checkResult));
+            console.log('[Verify] Moolre API response:', JSON.stringify(checkResult).slice(0, 500));
 
-            // Strict verification: require explicit success status
             const statusStr = String(checkResult.data?.status || '').toLowerCase();
             moolreApiVerified =
-                (checkResult.status === 1 && checkResult.data) &&
-                (statusStr === 'success' || statusStr === 'successful' || statusStr === 'completed' || statusStr === 'paid');
+                checkResult.status === 1 &&
+                checkResult.data &&
+                (statusStr === 'success' ||
+                    statusStr === 'successful' ||
+                    statusStr === 'completed' ||
+                    statusStr === 'paid');
 
-            // Also verify the amount matches
             if (moolreApiVerified && checkResult.data?.amount) {
-                const paidAmount = parseFloat(checkResult.data.amount);
-                const expectedAmount = Number(order.total);
-                if (Math.abs(paidAmount - expectedAmount) > 0.01) {
-                    console.error('[Verify] AMOUNT MISMATCH! Expected:', expectedAmount, 'Got:', paidAmount);
+                paidAmountFromApi = parseFloat(checkResult.data.amount);
+                const payableNow = Number((order as any).metadata?.payable_now);
+                const expectedAmount =
+                    Number.isFinite(payableNow) && payableNow > 0
+                        ? payableNow
+                        : Number(order.total);
+                if (paidAmountFromApi !== null && Math.abs(paidAmountFromApi - expectedAmount) > 0.01) {
+                    console.error(
+                        '[Verify] AMOUNT MISMATCH! Expected:', expectedAmount,
+                        '| Got:', paidAmountFromApi,
+                        '| order.total:', order.total,
+                        '| payable_now:', payableNow
+                    );
                     moolreApiVerified = false;
                 }
             }
-
         } catch (moolreError: any) {
             console.warn('[Verify] Moolre API check failed:', moolreError.message);
         }
 
-        // 4. Only proceed if Moolre API confirmed payment
         if (!moolreApiVerified) {
             console.log('[Verify] Cannot verify payment for:', orderNumber);
             return NextResponse.json({
                 success: false,
                 status: order.status,
                 payment_status: order.payment_status,
-                message: 'Payment not yet confirmed by payment provider'
+                message: 'Payment not yet confirmed by payment provider',
             });
         }
 
         console.log('[Verify] Marking order paid via moolre-api for:', orderNumber);
 
-        // 5. Mark as paid
-        const { data: orderJson, error: updateError } = await supabaseAdmin
-            .rpc('mark_order_paid', {
-                order_ref: orderNumber,
-                moolre_ref: 'moolre-api-verify'
-            });
+        const { data: orderJson, error: updateError } = await supabaseAdmin.rpc('mark_order_paid', {
+            order_ref: orderNumber,
+            moolre_ref: 'moolre-api-verify',
+        });
 
         if (updateError) {
-            console.error('[Verify] RPC Error:', updateError.message);
+            console.error('[Verify] RPC error:', updateError.message);
             return NextResponse.json({ success: false, message: 'Failed to update order' }, { status: 500 });
         }
 
         console.log('[Verify] Order marked as paid:', orderNumber);
 
-        // 6. Update customer stats
-        if (orderJson?.email) {
-            try {
-                await supabaseAdmin.rpc('update_customer_stats', {
-                    p_customer_email: orderJson.email,
-                    p_order_total: orderJson.total
-                });
-            } catch (statsError: any) {
-                console.error('[Verify] Customer stats failed:', statsError.message);
-            }
-        }
-
-        // 7. Send notifications (SMS + Email)
         if (orderJson) {
             try {
                 await sendOrderConfirmation(orderJson);
@@ -178,9 +170,8 @@ export async function POST(req: Request) {
             success: true,
             status: 'processing',
             payment_status: 'paid',
-            message: 'Payment verified and order updated'
+            message: 'Payment verified and order updated',
         });
-
     } catch (error: any) {
         console.error('[Verify] Error:', error.message);
         return NextResponse.json({ success: false, message: 'Internal error' }, { status: 500 });

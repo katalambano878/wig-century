@@ -4,93 +4,107 @@ import { sendOrderConfirmation } from '@/lib/notifications';
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/lib/rate-limit';
 
 /**
- * Moolre Callback Payload Structure (from their actual API):
+ * Moolre Callback Payload Shape (verified from live integration):
  * {
- *   "status": 1,
+ *   "status": 1,                     // API status (request accepted)
  *   "code": "P01",
  *   "message": "Transaction Successful",
  *   "data": {
- *     "txtstatus": 1,
- *     "payer": "233535998837",
- *     "terminalid": "",
- *     "accountnumber": "10789906062911",
- *     "name": "",
- *     "amount": "2",
- *     "value": "2",
+ *     "txstatus": 1,                 // Transaction status — also seen as "txtstatus" in docs
+ *     "payer": "233XXXXXXXXX",
+ *     "accountnumber": "1080...",
+ *     "amount": "34.96",
+ *     "value": "34.96",
  *     "transactionid": "42252702",
- *     "externalref": "ORD-1770330034217-441",
+ *     "externalref": "ORD-...-R17700...",
  *     "thirdpartyref": "74658410493"
  *   },
- *   "secret": "c23bc2ab-...",
+ *   "secret": "f619ff6d-...",        // Must match MOOLRE_CALLBACK_SECRET (either here or in data.secret)
  *   "ts": "2026-02-05 22:21:16",
  *   "go": null
  * }
  */
 
-export async function POST(req: Request) {
-    console.log('[Callback] POST received at', new Date().toISOString());
+async function parseBody(req: Request): Promise<Record<string, any>> {
+    const contentType = (req.headers.get('content-type') || '').toLowerCase();
+    const rawText = await req.text();
+
+    console.log('[Moolre Callback] Content-Type:', contentType);
+    console.log('[Moolre Callback] Raw body:', rawText?.slice(0, 2000));
+
+    if (!rawText) return {};
+
+    if (contentType.includes('application/json')) {
+        try {
+            return JSON.parse(rawText);
+        } catch {
+            /* fall through */
+        }
+    }
+
+    if (contentType.includes('x-www-form-urlencoded')) {
+        try {
+            return Object.fromEntries(new URLSearchParams(rawText).entries());
+        } catch {
+            /* fall through */
+        }
+    }
 
     try {
-        // Rate limiting
-        const clientId = getClientIdentifier(req);
-        const rateLimitResult = checkRateLimit(`callback:${clientId}`, RATE_LIMITS.callback);
+        return JSON.parse(rawText);
+    } catch {
+        try {
+            const entries = Object.fromEntries(new URLSearchParams(rawText).entries());
+            if (Object.keys(entries).length > 0) return entries;
+        } catch {
+            /* ignore */
+        }
+    }
 
-        if (!rateLimitResult.success) {
-            console.warn('[Callback] Rate limited:', clientId);
+    return {};
+}
+
+export async function POST(req: Request) {
+    console.log('[Moolre Callback] Received at', new Date().toISOString());
+
+    try {
+        // Callback rate limit is deliberately relaxed — payment providers retry
+        // on any non-2xx response and we don't want to drop legitimate retries.
+        const clientId = getClientIdentifier(req);
+        const rl = checkRateLimit(`moolre-callback:${clientId}`, RATE_LIMITS.callback);
+        if (!rl.success) {
+            console.warn('[Moolre Callback] Rate limited:', clientId);
             return NextResponse.json({ success: false, message: 'Too many requests' }, { status: 429 });
         }
 
-        let body: any = {};
-        const contentType = req.headers.get('content-type') || '';
+        const body = await parseBody(req);
+        console.log('[Moolre Callback] Body keys:', Object.keys(body).join(', '));
 
-        // Parse body
-        try {
-            if (contentType.includes('application/json')) {
-                body = await req.json();
-            } else if (contentType.includes('form')) {
-                const formData = await req.formData();
-                body = Object.fromEntries(formData.entries());
-            } else {
-                const rawText = await req.text();
-                try {
-                    body = JSON.parse(rawText);
-                } catch {
-                    try {
-                        body = Object.fromEntries(new URLSearchParams(rawText).entries());
-                    } catch {
-                        console.warn('[Callback] Could not parse body');
-                    }
-                }
-            }
-        } catch (parseError) {
-            console.error('[Callback] Body parsing failed');
-            return NextResponse.json({ success: false, message: 'Invalid Request Body' }, { status: 400 });
-        }
+        const data: any = body.data || {};
 
-        console.log('[Callback] Body keys:', Object.keys(body).join(', '));
-        console.log('[Callback] Data keys:', body.data ? Object.keys(body.data).join(', ') : 'no data object');
-
-        // ============================================================
-        // SECURITY: Verify callback secret FIRST (mandatory)
-        // ============================================================
+        // Verify the shared secret. Moolre has been observed sending it at
+        // both the top level (body.secret) and nested (body.data.secret) —
+        // accept either. Only skipped if the env var is unset.
         const expectedSecret = process.env.MOOLRE_CALLBACK_SECRET;
+        const providedSecret = body.secret || data.secret;
         if (expectedSecret) {
-            // If we have a configured secret, the callback MUST match it
-            if (!body.secret || body.secret !== expectedSecret) {
-                console.error('[Callback] Secret mismatch or missing! Rejecting callback.');
-                return NextResponse.json({ success: false, message: 'Invalid callback signature' }, { status: 403 });
+            if (!providedSecret || providedSecret !== expectedSecret) {
+                console.error(
+                    '[Moolre Callback] Secret mismatch or missing. Rejecting.',
+                    '| provided present:', !!providedSecret,
+                    '| lengths:', providedSecret?.length, 'vs', expectedSecret.length
+                );
+                return NextResponse.json(
+                    { success: false, message: 'Invalid callback signature' },
+                    { status: 403 }
+                );
             }
         } else {
-            // Log a warning if no secret is configured — this should be fixed
-            console.warn('[Callback] WARNING: MOOLRE_CALLBACK_SECRET not configured. Callback origin cannot be verified.');
+            console.warn('[Moolre Callback] MOOLRE_CALLBACK_SECRET not configured — skipping signature check.');
         }
 
-        // ============================================================
-        // EXTRACT FIELDS - Moolre nests payment data inside body.data
-        // ============================================================
-        const data = body.data || {};
-
-        // Order reference: check body.data.externalref first, then top-level fallbacks
+        // Normalize the external reference and strip any retry suffix like
+        // "-R1770000000" that we add during payment initiation.
         const rawExternalRef =
             data.externalref ||
             data.external_reference ||
@@ -99,130 +113,115 @@ export async function POST(req: Request) {
             body.orderRef ||
             body.external_reference;
 
-        // Strip retry suffix (e.g., "ORD-123-R1770000000" -> "ORD-123")
-        const merchantOrderRef = rawExternalRef
-            ? rawExternalRef.replace(/-R\d+$/, '')
-            : (data.metadata?.original_order_number || body.metadata?.original_order_number);
+        const merchantOrderRef: string | undefined = rawExternalRef
+            ? String(rawExternalRef).replace(/-R\d+$/, '')
+            : data.metadata?.original_order_number || body.metadata?.original_order_number;
 
-        // Moolre's transaction reference
         const moolreReference =
-            data.transactionid ||
-            data.thirdpartyref ||
-            body.reference ||
-            'callback';
+            data.transactionid || data.thirdpartyref || body.reference || 'callback';
 
-        // Payment status: body.status === 1 means API call succeeded,
-        // body.data.txtstatus === 1 means transaction was successful
         const apiStatus = body.status;
-        const txStatus = data.txtstatus;
+        // Live payload uses "txstatus"; some docs say "txtstatus" — accept either.
+        const txStatus = data.txstatus ?? data.txtstatus;
         const messageStr = String(body.message || '').toLowerCase();
 
-        console.log('[Callback] Order ref:', merchantOrderRef,
+        console.log(
+            '[Moolre Callback] ref:', merchantOrderRef,
             '| API status:', apiStatus,
-            '| TX status:', txStatus,
-            '| Message:', body.message,
-            '| Moolre ref:', moolreReference);
+            '| txstatus:', txStatus,
+            '| message:', body.message,
+            '| moolre ref:', moolreReference
+        );
 
         if (!merchantOrderRef) {
-            console.error('[Callback] Missing order reference. Body:', JSON.stringify(body).substring(0, 500));
+            console.error('[Moolre Callback] Missing order reference. Body:', JSON.stringify(body).slice(0, 500));
             return NextResponse.json({ success: false, message: 'Missing order reference' }, { status: 400 });
         }
 
-        // ============================================================
-        // SECURITY: Strict success validation
-        // Require BOTH api status AND transaction status to be success,
-        // OR the message explicitly indicates success (as fallback only 
-        // when both status fields are present and consistent).
-        // ============================================================
-        const apiOk = (apiStatus === 1 || apiStatus === '1');
-        const txOk = (txStatus === 1 || txStatus === '1');
-        const messageOk = messageStr.includes('successful') || messageStr.includes('success');
-
-        // Require at least api status OR tx status to be explicitly successful
-        // AND the message must not indicate failure
-        const isSuccess = (apiOk || txOk) && !messageStr.includes('fail') && !messageStr.includes('error');
+        const apiOk = apiStatus === 1 || apiStatus === '1';
+        const txOk = txStatus === 1 || txStatus === '1';
+        const messageIndicatesFailure = messageStr.includes('fail') || messageStr.includes('error');
+        const isSuccess = (apiOk || txOk) && !messageIndicatesFailure;
 
         if (isSuccess) {
-            console.log(`[Callback] Payment SUCCESS for Order ${merchantOrderRef}`);
+            console.log(`[Moolre Callback] Payment SUCCESS for ${merchantOrderRef}`);
 
-            // Check if order exists
             const { data: existingOrder, error: fetchError } = await supabaseAdmin
                 .from('orders')
-                .select('id, order_number, payment_status, total')
+                .select('id, order_number, payment_status, total, metadata')
                 .eq('order_number', merchantOrderRef)
                 .single();
 
             if (fetchError || !existingOrder) {
-                console.error('[Callback] Order not found:', merchantOrderRef);
+                console.error('[Moolre Callback] Order not found:', merchantOrderRef);
                 return NextResponse.json({ success: false, message: 'Order not found' }, { status: 404 });
             }
 
-            // Already paid - idempotent
             if (existingOrder.payment_status === 'paid') {
-                console.log('[Callback] Order already paid, skipping:', merchantOrderRef);
+                console.log('[Moolre Callback] Already paid, idempotent skip:', merchantOrderRef);
                 return NextResponse.json({ success: true, message: 'Order already processed' });
             }
 
-            // ============================================================
-            // SECURITY: Verify amount matches — REJECT if mismatch
-            // ============================================================
-            const callbackAmount = data.amount ? parseFloat(data.amount) : (body.amount ? parseFloat(body.amount) : null);
-            if (callbackAmount !== null) {
-                const expectedAmount = Number(existingOrder.total);
+            // Amount verification. Compare against payable_now (partial-payment
+            // orders where delivery is billed on arrival) or total otherwise.
+            const callbackAmount =
+                data.amount != null
+                    ? parseFloat(data.amount)
+                    : body.amount != null
+                        ? parseFloat(body.amount)
+                        : null;
+            if (callbackAmount !== null && Number.isFinite(callbackAmount)) {
+                const payableNow = Number(existingOrder.metadata?.payable_now);
+                const expectedAmount =
+                    Number.isFinite(payableNow) && payableNow > 0
+                        ? payableNow
+                        : Number(existingOrder.total);
                 if (Math.abs(callbackAmount - expectedAmount) > 0.01) {
-                    console.error('[Callback] AMOUNT MISMATCH — REJECTING! Expected:', expectedAmount, 'Got:', callbackAmount, 'Order:', merchantOrderRef);
-                    return NextResponse.json({
-                        success: false,
-                        message: 'Payment amount does not match order total'
-                    }, { status: 400 });
+                    console.error(
+                        '[Moolre Callback] AMOUNT MISMATCH. Expected:', expectedAmount,
+                        '| Got:', callbackAmount,
+                        '| order.total:', existingOrder.total,
+                        '| payable_now:', payableNow
+                    );
+                    return NextResponse.json(
+                        { success: false, message: 'Payment amount does not match order' },
+                        { status: 400 }
+                    );
                 }
             }
 
-            // Mark order as paid via RPC
-            const { data: orderJson, error: updateError } = await supabaseAdmin
-                .rpc('mark_order_paid', {
+            const { data: orderJson, error: updateError } = await supabaseAdmin.rpc(
+                'mark_order_paid',
+                {
                     order_ref: merchantOrderRef,
-                    moolre_ref: String(moolreReference)
-                });
+                    moolre_ref: String(moolreReference),
+                }
+            );
 
             if (updateError) {
-                console.error('[Callback] RPC Error:', updateError.message);
+                console.error('[Moolre Callback] RPC error:', updateError);
                 return NextResponse.json({ success: false, message: 'Database update failed' }, { status: 500 });
             }
 
             if (!orderJson) {
-                console.error('[Callback] Order not found after RPC:', merchantOrderRef);
+                console.error('[Moolre Callback] Order not found after RPC:', merchantOrderRef);
                 return NextResponse.json({ success: false, message: 'Order not found' }, { status: 404 });
             }
 
-            console.log('[Callback] Order updated! ID:', orderJson.id, '| Status:', orderJson.status);
+            console.log('[Moolre Callback] Order updated:', orderJson.order_number, '| status:', orderJson.status);
 
-            // Update customer stats
             try {
-                if (orderJson.email) {
-                    await supabaseAdmin.rpc('update_customer_stats', {
-                        p_customer_email: orderJson.email,
-                        p_order_total: orderJson.total
-                    });
-                }
-            } catch (statsError: any) {
-                console.error('[Callback] Customer stats failed:', statsError.message);
-            }
-
-            // Send SMS + Email notifications
-            try {
-                console.log('[Callback] Sending notifications for:', orderJson.order_number);
                 await sendOrderConfirmation(orderJson);
-                console.log('[Callback] Notifications sent!');
-            } catch (notifyError: any) {
-                console.error('[Callback] Notification failed:', notifyError.message);
+            } catch (notifyErr: any) {
+                console.error('[Moolre Callback] Notification failed (non-blocking):', notifyErr?.message || notifyErr);
             }
 
-            return NextResponse.json({ success: true, message: 'Payment verified and Order Updated' });
+            return NextResponse.json({ success: true, message: 'Payment verified and order updated' });
+        }
 
-        } else {
-            // Payment failed
-            console.log(`[Callback] Payment FAILED for ${merchantOrderRef} | Status: ${apiStatus} | TX: ${txStatus}`);
+        // Explicit failure from Moolre
+        if (txStatus === 2 || txStatus === '2' || messageIndicatesFailure) {
+            console.log(`[Moolre Callback] Payment FAILED for ${merchantOrderRef} | txstatus: ${txStatus}`);
 
             await supabaseAdmin
                 .from('orders')
@@ -230,20 +229,37 @@ export async function POST(req: Request) {
                     payment_status: 'failed',
                     metadata: {
                         moolre_reference: moolreReference,
-                        failure_reason: body.message || 'Payment failed'
-                    }
+                        failure_reason: body.message || 'Payment failed',
+                    },
                 })
                 .eq('order_number', merchantOrderRef);
 
             return NextResponse.json({ success: false, message: 'Payment not successful' });
         }
 
+        // Unknown / pending — leave the order alone; reconcile will retry.
+        console.log(`[Moolre Callback] Pending/unknown for ${merchantOrderRef} — no state change`);
+        return NextResponse.json({ success: true, message: 'Callback received, payment not final' });
     } catch (error: any) {
-        console.error('[Callback] Critical Error:', error.message);
+        console.error('[Moolre Callback] Critical error:', error);
         return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
     }
 }
 
 export async function GET(req: Request) {
-    return NextResponse.json({ message: 'Moolre callback endpoint ready', timestamp: new Date().toISOString() });
+    const url = new URL(req.url);
+    if ([...url.searchParams.keys()].length === 0) {
+        return NextResponse.json({ message: 'Moolre callback endpoint ready', timestamp: new Date().toISOString() });
+    }
+
+    console.log('[Moolre Callback] GET params:', Object.fromEntries(url.searchParams.entries()));
+
+    // If a GET redirect carries the same fields (some Moolre setups do this),
+    // reuse the POST handler so we have a single codepath.
+    const synthetic = new Request(req.url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: url.searchParams.toString(),
+    });
+    return POST(synthetic);
 }

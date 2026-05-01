@@ -2,22 +2,20 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/lib/rate-limit';
 
+/**
+ * Initiate a Moolre payment. This mirrors standardecom's proven shape:
+ *  - The amount is always taken from the DB (never trust the client).
+ *  - externalref is `<order_number>-R<timestamp>` so repeat attempts are unique.
+ *  - The callback strips the `-R<ts>` suffix to find the real order.
+ */
 export async function POST(req: Request) {
     try {
-        // Rate limiting
         const clientId = getClientIdentifier(req);
-        const rateLimitResult = checkRateLimit(`payment:${clientId}`, RATE_LIMITS.payment);
-
-        if (!rateLimitResult.success) {
+        const rl = checkRateLimit(`moolre-init:${clientId}`, RATE_LIMITS.payment);
+        if (!rl.success) {
             return NextResponse.json(
-                { success: false, message: 'Too many requests. Please try again later.' },
-                {
-                    status: 429,
-                    headers: {
-                        'X-RateLimit-Remaining': '0',
-                        'X-RateLimit-Reset': rateLimitResult.resetIn.toString()
-                    }
-                }
+                { success: false, message: 'Too many payment attempts. Please wait a moment.' },
+                { status: 429 }
             );
         }
 
@@ -28,18 +26,15 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, message: 'Missing or invalid orderId' }, { status: 400 });
         }
 
-        // Ensure environment variables are set
         if (!process.env.MOOLRE_API_USER || !process.env.MOOLRE_API_PUBKEY || !process.env.MOOLRE_ACCOUNT_NUMBER) {
-            console.error('Missing Moolre credentials');
+            console.error('[Payment] Missing Moolre credentials');
             return NextResponse.json({ success: false, message: 'Payment gateway configuration error' }, { status: 500 });
         }
 
-        // SECURITY: Fetch the order from the database and use its total.
-        // NEVER trust the amount from the client.
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
         const query = supabaseAdmin
             .from('orders')
-            .select('id, order_number, total, email, payment_status');
+            .select('id, order_number, total, email, payment_status, metadata');
 
         const { data: order, error: orderError } = isUUID
             ? await query.eq('id', orderId).single()
@@ -54,46 +49,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, message: 'Order is already paid' }, { status: 400 });
         }
 
-        // Stock validation: block payment only if items are confirmed out of stock.
-        // Query failures are logged but don't block payment (avoids breaking
-        // the normal checkout flow where order_items may not be committed yet).
-        try {
-            const { data: orderItems, error: itemsError } = await supabaseAdmin
-                .from('order_items')
-                .select('quantity, product_id, products(name, quantity, is_active)')
-                .eq('order_id', order.id);
-
-            if (itemsError) {
-                console.warn('[Payment] Stock check query failed (non-blocking):', itemsError.message);
-            } else if (orderItems && orderItems.length > 0) {
-                const outOfStock: string[] = [];
-                for (const item of orderItems) {
-                    const product = (item as any).products;
-                    if (!product) continue;
-                    if (!product.is_active) {
-                        outOfStock.push(`${product.name} is no longer available`);
-                    } else if (product.quantity < item.quantity) {
-                        outOfStock.push(
-                            product.quantity === 0
-                                ? `${product.name} is out of stock`
-                                : `${product.name} — only ${product.quantity} left (you ordered ${item.quantity})`
-                        );
-                    }
-                }
-                if (outOfStock.length > 0) {
-                    console.log('[Payment] Blocked — out of stock items:', outOfStock);
-                    return NextResponse.json({
-                        success: false,
-                        message: `Some items are out of stock: ${outOfStock.join('; ')}`,
-                        outOfStock,
-                    }, { status: 409 });
-                }
-            }
-        } catch (stockErr: any) {
-            console.warn('[Payment] Stock check exception (non-blocking):', stockErr.message);
-        }
-
-        const amount = Number(order.total);
+        // Partial-payment aware: if the order was placed with "Pay Item Cost Only",
+        // the checkout stores the amount actually due now in metadata.payable_now.
+        // Fall back to order.total for full-payment orders or legacy records.
+        const payableNow = Number(order.metadata?.payable_now);
+        const amount =
+            Number.isFinite(payableNow) && payableNow > 0 ? payableNow : Number(order.total);
         if (!amount || amount <= 0) {
             return NextResponse.json({ success: false, message: 'Invalid order amount' }, { status: 400 });
         }
@@ -103,20 +64,16 @@ export async function POST(req: Request) {
         const requestUrl = new URL(req.url);
         const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || requestUrl.origin).replace(/\/+$/, '');
 
-        // Optional override for mobile deep-link return.
-        // Allow production-safe URLs and Expo dev deep links.
         const defaultRedirectUrl = `${baseUrl}/order-success?order=${orderRef}&payment_success=true`;
-        const allowedPrefixes = ['https://', 'wigcentury://', 'exp://', 'exps://'];
+        const allowedPrefixes = ['https://'];
         const safeRedirectUrl =
             typeof redirectUrl === 'string' &&
                 allowedPrefixes.some((prefix) => redirectUrl.startsWith(prefix))
                 ? redirectUrl
                 : defaultRedirectUrl;
 
-        // Generate a unique external reference for Moolre
         const uniqueRef = `${orderRef}-R${Date.now()}`;
 
-        // Moolre Payload
         const payload = {
             type: 1,
             amount: amount.toString(),
@@ -124,43 +81,46 @@ export async function POST(req: Request) {
             externalref: uniqueRef,
             callback: `${baseUrl}/api/payment/moolre/callback`,
             redirect: safeRedirectUrl,
-            reusable: "0",
-            currency: "GHS",
+            reusable: '0',
+            currency: 'GHS',
             accountnumber: process.env.MOOLRE_ACCOUNT_NUMBER,
             metadata: {
                 customer_email: customerEmail || order.email,
-                original_order_number: orderRef
-            }
+                original_order_number: orderRef,
+            },
         };
 
-        console.log('[Payment] Initiating for order:', orderRef, '| Amount from DB:', amount, '| Callback:', payload.callback);
+        console.log('[Payment] Initiating for order:', orderRef, '| Amount:', amount, '| Callback:', payload.callback);
 
         const response = await fetch('https://api.moolre.com/embed/link', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-API-USER': process.env.MOOLRE_API_USER,
-                'X-API-PUBKEY': process.env.MOOLRE_API_PUBKEY
+                'X-API-PUBKEY': process.env.MOOLRE_API_PUBKEY,
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
         });
 
         const result = await response.json();
-        console.log('[Payment] Response status:', result.status, '| Has URL:', !!result.data?.authorization_url);
+        console.log('[Payment] Moolre status:', result.status, '| has URL:', !!result.data?.authorization_url);
 
         if (result.status === 1 && result.data?.authorization_url) {
             return NextResponse.json({
                 success: true,
                 url: result.data.authorization_url,
                 reference: result.data.reference,
-                externalRef: uniqueRef
+                externalRef: uniqueRef,
             });
         } else {
-            return NextResponse.json({ success: false, message: result.message || 'Failed to generate payment link' }, { status: 400 });
+            console.error('[Payment] Moolre rejected request:', result);
+            return NextResponse.json(
+                { success: false, message: result.message || 'Failed to generate payment link', moolre: result },
+                { status: 400 }
+            );
         }
-
     } catch (error: any) {
-        console.error('Payment API Error:', error);
-        return NextResponse.json({ success: false, message: 'Internal Server Error' }, { status: 500 });
+        console.error('[Payment] API error:', error);
+        return NextResponse.json({ success: false, message: error.message || 'Internal Server Error' }, { status: 500 });
     }
 }

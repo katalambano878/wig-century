@@ -13,73 +13,124 @@ function OrderSuccessContent() {
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState(false);
 
+  const paymentSuccessFlag = paymentSuccess === 'true';
+
+  const fetchOrder = async () => {
+    if (!orderNumber) return null;
+    const { data: orderData, error } = await supabase
+      .from('orders')
+      .select(`*, order_items (*)`)
+      .eq('order_number', orderNumber)
+      .single();
+    if (error) throw error;
+    return orderData;
+  };
+
+  // Auto-reconcile: if we returned from Moolre but the async webhook
+  // hasn't flipped the order to paid yet, query Moolre directly via the
+  // /verify endpoint and update the order.
   useEffect(() => {
-    async function fetchOrder() {
+    let cancelled = false;
+
+    async function run() {
       if (!orderNumber) {
         setLoading(false);
         return;
       }
 
       try {
-        const { data: orderData, error } = await supabase
-          .from('orders')
-          .select(`*, order_items (*)`)
-          .eq('order_number', orderNumber)
-          .single();
+        let orderData = await fetchOrder();
+        if (cancelled) return;
 
-        if (error) throw error;
-        setOrder(orderData);
+        const needsReconcile =
+          paymentSuccessFlag &&
+          orderData &&
+          orderData.payment_method === 'moolre' &&
+          orderData.payment_status !== 'paid' &&
+          orderData.payment_status !== 'refunded';
 
-        if (paymentSuccess === 'true' && orderData && orderData.payment_status !== 'paid') {
-          verifyPayment(orderNumber, orderData);
+        if (needsReconcile) {
+          setVerifying(true);
+
+          // Give the webhook ~3s to land, then refetch. Fall through to
+          // /verify which queries Moolre's API directly.
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          if (cancelled) return;
+
+          try {
+            const refreshed = await fetchOrder();
+            if (refreshed?.payment_status === 'paid') {
+              orderData = refreshed;
+            } else {
+              try {
+                const res = await fetch('/api/payment/moolre/verify', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ orderNumber }),
+                });
+                const result = await res.json().catch(() => ({}));
+                if (result?.success && result?.payment_status === 'paid') {
+                  const updated = await fetchOrder();
+                  if (updated) orderData = updated;
+                } else {
+                  orderData = await fetchOrder();
+                }
+              } catch (verifyErr) {
+                console.warn('Verify failed (non-blocking):', verifyErr);
+              }
+            }
+          } catch (refetchErr) {
+            console.warn('Refetch during verify failed:', refetchErr);
+          } finally {
+            if (!cancelled) setVerifying(false);
+          }
         }
+
+        if (!cancelled) setOrder(orderData);
       } catch (err) {
         console.error('Error fetching order:', err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
-    fetchOrder();
-  }, [orderNumber, paymentSuccess]);
 
-  const verifyPayment = async (orderNum: string, _initial: any) => {
-    setVerifying(true);
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [orderNumber, paymentSuccessFlag]);
 
-    const { data: refreshed } = await supabase
-      .from('orders')
-      .select('*, order_items (*)')
-      .eq('order_number', orderNum)
-      .single();
+  // Light background poll while the order is still pending so the page
+  // flips to "Payment received" automatically once the webhook (or
+  // admin) updates it. Stops polling as soon as the order moves out of
+  // pending.
+  useEffect(() => {
+    if (!order || !orderNumber) return;
+    const status = (order.payment_status || 'pending').toLowerCase();
+    if (status !== 'pending') return;
 
-    if (refreshed?.payment_status === 'paid') {
-      setOrder(refreshed);
-      setVerifying(false);
-      return;
-    }
-
-    try {
-      const res = await fetch('/api/payment/moolre/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderNumber: orderNum }),
-      });
-
-      const result = await res.json();
-      if (result.success && result.payment_status === 'paid') {
-        const { data: updated } = await supabase
+    let cancelled = false;
+    const interval = setInterval(async () => {
+      try {
+        const { data } = await supabase
           .from('orders')
-          .select('*, order_items (*)')
-          .eq('order_number', orderNum)
+          .select('*, order_items(*)')
+          .eq('order_number', orderNumber)
           .single();
-        if (updated) setOrder(updated);
+        if (cancelled || !data) return;
+        if ((data.payment_status || '').toLowerCase() !== 'pending') {
+          setOrder(data);
+        }
+      } catch {
+        // ignore — try again next tick
       }
-    } catch (err) {
-      console.error('Payment verification failed:', err);
-    } finally {
-      setVerifying(false);
-    }
-  };
+    }, 15000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [order, orderNumber]);
 
   /* ───────── LOADING ───────── */
   if (loading) {

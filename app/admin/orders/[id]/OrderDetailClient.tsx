@@ -189,6 +189,34 @@ export default function OrderDetailClient({ orderId }: OrderDetailClientProps) {
   };
 
   const [resendingNotification, setResendingNotification] = useState(false);
+  const [reconciling, setReconciling] = useState(false);
+
+  // Re-check a pending Moolre payment against Moolre's authenticated
+  // /embed/status API. Marks the order paid only if Moolre confirms.
+  const handleReconcile = async () => {
+    if (!order?.order_number) return;
+    try {
+      setReconciling(true);
+      const res = await fetch('/api/payment/moolre/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderNumber: order.order_number }),
+      });
+      const payload = await res.json();
+
+      if (payload.success && payload.payment_status === 'paid') {
+        alert('Verified with Moolre — order marked as paid.');
+      } else {
+        alert(payload.message || 'Could not verify with Moolre yet. Try again in a moment.');
+      }
+
+      await fetchOrderDetails();
+    } catch (err: any) {
+      alert(err?.message || 'Reconcile failed');
+    } finally {
+      setReconciling(false);
+    }
+  };
 
   const handleResendNotification = async () => {
     if (!order) return;
@@ -567,6 +595,34 @@ export default function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                   </span>
                 </div>
               </div>
+
+              {order.payment_method === 'moolre' &&
+                order.payment_status !== 'paid' &&
+                order.payment_status !== 'refunded' && (
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <button
+                      onClick={handleReconcile}
+                      disabled={reconciling}
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 hover:bg-black text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      {reconciling ? (
+                        <>
+                          <i className="ri-loader-4-line animate-spin" />
+                          Checking with Moolre…
+                        </>
+                      ) : (
+                        <>
+                          <i className="ri-refresh-line" />
+                          Reconcile with Moolre
+                        </>
+                      )}
+                    </button>
+                    <p className="mt-2 text-xs text-gray-500 leading-relaxed">
+                      Re-checks this transaction against Moolre. Marks the order paid only
+                      if Moolre confirms the payment.
+                    </p>
+                  </div>
+                )}
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
