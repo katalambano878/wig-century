@@ -545,7 +545,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                     <div className="mb-9">
                       <div className="flex items-center justify-between mb-4">
                         <span className="text-[10px] font-black tracking-[0.4em] uppercase text-slate-900">
-                          {_hasColors ? 'Size / Type' : 'Variant'}
+                          {_hasColors ? 'Length / style' : 'Variant'}
                         </span>
                         {selectedVariant ? (
                           <span className="font-serif italic text-slate-600 text-sm">

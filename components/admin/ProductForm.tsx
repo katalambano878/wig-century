@@ -42,171 +42,325 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
         return `${prefix}-${timestamp}-${random}`;
     };
 
-    // --- Variant System ---
-    // Preset color palette
-    const colorPresets = [
-        { name: 'Black', hex: '#000000' },
-        { name: 'White', hex: '#FFFFFF' },
-        { name: 'Red', hex: '#EF4444' },
-        { name: 'Blue', hex: '#3B82F6' },
-        { name: 'Navy', hex: '#1E3A5F' },
-        { name: 'Green', hex: '#22C55E' },
-        { name: 'Yellow', hex: '#EAB308' },
-        { name: 'Pink', hex: '#EC4899' },
-        { name: 'Purple', hex: '#A855F7' },
-        { name: 'Orange', hex: '#F97316' },
-        { name: 'Gray', hex: '#6B7280' },
-        { name: 'Brown', hex: '#92400E' },
-        { name: 'Beige', hex: '#D2B48C' },
-        { name: 'Maroon', hex: '#800000' },
-        { name: 'Teal', hex: '#14B8A6' },
-        { name: 'Cream', hex: '#FFFDD0' },
-        { name: 'Gold', hex: '#D4AF37' },
-        { name: 'Silver', hex: '#C0C0C0' },
+    // ── Wig / hair option groups (same model as LuxuryStrand) ─────────────
+    type OptionGroupDef = {
+        key: string;
+        label: string;
+        type: 'values' | 'color';
+        defaultValues: string[];
+        generatesVariants: boolean;
+        help?: string;
+    };
+
+    const DEFAULT_OPTION_GROUPS: OptionGroupDef[] = [
+        { key: 'color', label: 'Hair colour', type: 'color', defaultValues: [], generatesVariants: false, help: 'Swatches on the product page use this option.' },
+        { key: 'lace_type', label: 'Lace type', type: 'values', defaultValues: ['HD Lace', 'Transparent Lace'], generatesVariants: false, help: 'e.g. HD vs transparent — turn on “Creates variants” if price/stock differ.' },
+        { key: 'lace_length', label: 'Lace size (closure / frontal)', type: 'values', defaultValues: ['2x6', '4x4', '5x5', '6x6', '7x7', '13x4', '13x6'], generatesVariants: false },
+        { key: 'length', label: 'Hair length', type: 'values', defaultValues: ['10\"', '12\"', '14\"', '16\"', '18\"', '20\"', '22\"', '24\"', '26\"', '28\"', '30\"'], generatesVariants: true, help: 'Often drives different prices per inch.' },
+        { key: 'wig_size', label: 'Wig cap size', type: 'values', defaultValues: ['Small', 'Medium', 'Large', 'Extra Large'], generatesVariants: false },
+        { key: 'density', label: 'Density', type: 'values', defaultValues: ['150%', '180%', '200%', '250%', '300%', '350%'], generatesVariants: false },
     ];
-    const sizePresets = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
 
-    // Parse existing variants to extract unique colors and sizes
-    const existingVariants = (initialData?.product_variants || []).map((v: any) => ({
-        ...v,
-        stock: v.stock ?? v.quantity ?? 0,
-        color: v.color ?? v.option2 ?? '',
-        size: v.name || ''
-    }));
+    type OptionGroupState = {
+        enabled: boolean;
+        values: string[];
+        generatesVariants: boolean;
+    };
 
-    const [selectedColors, setSelectedColors] = useState<{ name: string; hex: string }[]>(() => {
-        const colors = new Map<string, string>();
-        existingVariants.forEach((v: any) => {
-            if (v.color) {
-                const preset = colorPresets.find(c => c.name.toLowerCase() === v.color.toLowerCase());
-                colors.set(v.color, preset?.hex || '#888888');
+    const legacyVariants = (initialData?.product_variants || []) as any[];
+
+    const [optionGroupStates, setOptionGroupStates] = useState<Record<string, OptionGroupState>>(() => {
+        const stored = initialData?.metadata?.product_options as
+            | Record<string, { values: string[]; generatesVariants?: boolean }>
+            | undefined;
+        const state: Record<string, OptionGroupState> = {};
+        if (stored && Object.keys(stored).length > 0) {
+            DEFAULT_OPTION_GROUPS.forEach((def) => {
+                if (stored[def.key]) {
+                    state[def.key] = {
+                        enabled: true,
+                        values: stored[def.key].values || def.defaultValues,
+                        generatesVariants: stored[def.key].generatesVariants ?? def.generatesVariants,
+                    };
+                } else {
+                    state[def.key] = {
+                        enabled: false,
+                        values: def.defaultValues,
+                        generatesVariants: def.generatesVariants,
+                    };
+                }
+            });
+            return state;
+        }
+        // Legacy: colour (option2) × length/size (option1 / name)
+        if (legacyVariants.length > 0) {
+            const colors = [...new Set(legacyVariants.map((v) => v.option2).filter(Boolean))] as string[];
+            const lengths = [...new Set(legacyVariants.map((v) => v.option1 || v.name).filter(Boolean))] as string[];
+            DEFAULT_OPTION_GROUPS.forEach((def) => {
+                state[def.key] = {
+                    enabled: false,
+                    values: def.defaultValues,
+                    generatesVariants: def.generatesVariants,
+                };
+            });
+            if (colors.length > 0) {
+                state.color = {
+                    enabled: true,
+                    values: colors.map((c) => {
+                        const row = legacyVariants.find((v) => v.option2 === c);
+                        const hex = row?.metadata?.color_hex || '#888888';
+                        return `${c}|${hex}`;
+                    }),
+                    generatesVariants: true,
+                };
             }
+            if (lengths.length > 0) {
+                state.length = {
+                    enabled: true,
+                    values: lengths,
+                    generatesVariants: true,
+                };
+            }
+            return state;
+        }
+        DEFAULT_OPTION_GROUPS.forEach((def) => {
+            state[def.key] = {
+                enabled: false,
+                values: def.defaultValues,
+                generatesVariants: def.generatesVariants,
+            };
         });
-        return Array.from(colors.entries()).map(([name, hex]) => ({ name, hex }));
+        return state;
     });
 
-    const [selectedSizes, setSelectedSizes] = useState<string[]>(() => {
-        const sizes = new Set<string>();
-        existingVariants.forEach((v: any) => {
-            if (v.size) sizes.add(v.size);
-        });
-        return Array.from(sizes);
+    const [customGroups, setCustomGroups] = useState<
+        { name: string; values: string[]; generatesVariants: boolean }[]
+    >(() => {
+        const storedCustom = initialData?.metadata?.custom_option_groups as
+            | { name: string; values: string[]; generatesVariants?: boolean }[]
+            | undefined;
+        return (storedCustom || []).map((g) => ({
+            name: g.name,
+            values: g.values || [],
+            generatesVariants: g.generatesVariants ?? false,
+        }));
     });
+    const [customGroupInput, setCustomGroupInput] = useState('');
 
-    const [customColorName, setCustomColorName] = useState('');
-    const [customColorHex, setCustomColorHex] = useState('#888888');
-    const [customSize, setCustomSize] = useState('');
+    const [colorPickerHex, setColorPickerHex] = useState('#1a1a1a');
+    const [colorPickerName, setColorPickerName] = useState('');
+    const [customOptionInput, setCustomOptionInput] = useState<Record<string, string>>({});
 
-    // Build variants from colors × sizes (or just sizes, or just colors)
-    const buildVariantKey = (color: string, size: string) => `${color}|||${size}`;
+    const toggleOptionGroup = (key: string) => {
+        setOptionGroupStates((prev) => ({
+            ...prev,
+            [key]: { ...prev[key], enabled: !prev[key].enabled },
+        }));
+    };
 
-    // Store variant data (price, stock) in a map keyed by "color|||size"
+    const toggleGeneratesVariants = (key: string) => {
+        setOptionGroupStates((prev) => ({
+            ...prev,
+            [key]: { ...prev[key], generatesVariants: !prev[key].generatesVariants },
+        }));
+    };
+
+    const addValueToGroup = (key: string, value: string) => {
+        if (!value.trim()) return;
+        setOptionGroupStates((prev) => {
+            const g = prev[key];
+            if (g.values.includes(value.trim())) return prev;
+            return { ...prev, [key]: { ...g, values: [...g.values, value.trim()] } };
+        });
+        setCustomOptionInput((prev) => ({ ...prev, [key]: '' }));
+    };
+
+    const removeValueFromGroup = (key: string, value: string) => {
+        setOptionGroupStates((prev) => ({
+            ...prev,
+            [key]: { ...prev[key], values: prev[key].values.filter((v) => v !== value) },
+        }));
+    };
+
+    const addColorValue = () => {
+        const label = colorPickerName.trim() || colorPickerHex;
+        const colorVal = `${label}|${colorPickerHex}`;
+        setOptionGroupStates((prev) => {
+            const g = prev.color;
+            if (g.values.some((v) => v.split('|')[1] === colorPickerHex)) return prev;
+            return { ...prev, color: { ...g, values: [...g.values, colorVal] } };
+        });
+        setColorPickerName('');
+    };
+
+    const resetGroupToDefaults = (key: string) => {
+        const def = DEFAULT_OPTION_GROUPS.find((d) => d.key === key);
+        if (!def) return;
+        setOptionGroupStates((prev) => ({
+            ...prev,
+            [key]: { ...prev[key], values: def.defaultValues },
+        }));
+    };
+
+    const addCustomGroup = () => {
+        const name = customGroupInput.trim();
+        if (!name || customGroups.some((g) => g.name === name)) return;
+        setCustomGroups((prev) => [...prev, { name, values: [], generatesVariants: false }]);
+        setCustomGroupInput('');
+    };
+    const removeCustomGroup = (idx: number) => setCustomGroups((prev) => prev.filter((_, i) => i !== idx));
+    const addCustomGroupValue = (idx: number, val: string) => {
+        if (!val.trim()) return;
+        setCustomGroups((prev) =>
+            prev.map((g, i) =>
+                i === idx && !g.values.includes(val.trim()) ? { ...g, values: [...g.values, val.trim()] } : g
+            )
+        );
+        setCustomOptionInput((prev) => ({ ...prev, [`custom_${idx}`]: '' }));
+    };
+    const removeCustomGroupValue = (idx: number, val: string) => {
+        setCustomGroups((prev) =>
+            prev.map((g, i) => (i === idx ? { ...g, values: g.values.filter((v) => v !== val) } : g))
+        );
+    };
+
+    const enabledDefaults = DEFAULT_OPTION_GROUPS.filter(
+        (d) => optionGroupStates[d.key]?.enabled && optionGroupStates[d.key]?.values.length > 0
+    );
+
+    type GenGroup = { name: string; values: string[]; key: string };
+
+    const variantGeneratingGroups: GenGroup[] = [
+        ...enabledDefaults
+            .filter((d) => optionGroupStates[d.key].generatesVariants)
+            .map((d) => ({
+                name: d.label,
+                key: d.key,
+                values:
+                    d.key === 'color'
+                        ? optionGroupStates[d.key].values.map((v) => v.split('|')[0])
+                        : optionGroupStates[d.key].values,
+            })),
+        ...customGroups
+            .filter((g) => g.generatesVariants && g.values.length > 0)
+            .map((g, i) => ({ name: g.name, values: g.values, key: `custom_${i}` })),
+    ];
+
+    const activeGroups = variantGeneratingGroups;
+
+    const cartesian = (arrays: string[][]): string[][] => {
+        if (arrays.length === 0) return [[]];
+        const [first, ...rest] = arrays;
+        const restProduct = cartesian(rest);
+        return first.flatMap((item) => restProduct.map((combo) => [item, ...combo]));
+    };
+
+    const internalValueArrays = (): string[][] =>
+        activeGroups.map((g) => {
+            const def = DEFAULT_OPTION_GROUPS.find((d) => d.key === g.key);
+            if (def?.key === 'color') {
+                return optionGroupStates.color.values.filter((raw) =>
+                    g.values.includes(raw.split('|')[0])
+                );
+            }
+            return g.values;
+        });
+
+    const variantCombinations =
+        activeGroups.length > 0
+            ? cartesian(internalValueArrays()).map((values) => ({
+                  values: values.map((raw) => (raw.includes('|') ? raw.split('|')[0] : raw)),
+                  key: values.join('|||'),
+                  rawValues: values,
+              }))
+            : [];
+
     const emptyVariantRow = () => ({
-        price: price,
+        price: price?.toString() || '',
+        comparePrice: comparePrice?.toString() || '',
+        salePrice: salePrice?.toString() || '',
         stock: '0',
         sku: '',
-        salePrice: '',
     });
 
     const [variantData, setVariantData] = useState<
-        Record<string, { price: string; stock: string; sku: string; salePrice: string }>
+        Record<string, { price: string; comparePrice: string; salePrice: string; stock: string; sku: string }>
     >(() => {
-        const data: Record<string, { price: string; stock: string; sku: string; salePrice: string }> = {};
-        existingVariants.forEach((v: any) => {
-            const key = buildVariantKey(v.color || '', v.size || '');
+        const data: Record<string, { price: string; comparePrice: string; salePrice: string; stock: string; sku: string }> = {};
+        const byLegacyKey = (v: any) => {
+            const c = v.option2 || '';
+            const len = v.option1 || '';
+            const hex = v.metadata?.color_hex;
+            const colorPart = c && hex ? `${c}|${hex}` : c;
+            return [colorPart, len].filter(Boolean).join('|||');
+        };
+
+        legacyVariants.forEach((v: any) => {
+            let key = typeof v.metadata?.combo_key === 'string' ? v.metadata.combo_key : '';
+            if (!key) {
+                key = byLegacyKey(v);
+            }
+            if (!key) {
+                key = (v.name || v.id || 'default') as string;
+            }
             data[key] = {
                 price: v.price?.toString() || '',
-                stock: v.stock?.toString() || '0',
-                sku: v.sku || '',
+                comparePrice: v.compare_at_price != null ? String(v.compare_at_price) : '',
                 salePrice:
-                    v.sale_price != null && v.sale_price !== ''
-                        ? String(v.sale_price)
-                        : '',
+                    v.sale_price != null && v.sale_price !== '' ? String(v.sale_price) : '',
+                stock: (v.stock ?? v.quantity ?? 0).toString(),
+                sku: v.sku || '',
             };
         });
         return data;
     });
 
-    // Computed: all variant combinations
-    const variantCombinations = (() => {
-        const combos: { color: string; colorHex: string; size: string; key: string }[] = [];
-        const colors = selectedColors.length > 0 ? selectedColors : [{ name: '', hex: '' }];
-        const sizes = selectedSizes.length > 0 ? selectedSizes : [''];
-
-        for (const color of colors) {
-            for (const size of sizes) {
-                if (!color.name && !size) continue; // skip if both empty
-                const key = buildVariantKey(color.name, size);
-                combos.push({ color: color.name, colorHex: color.hex, size, key });
-            }
-        }
-        return combos;
-    })();
-
-    // Build the flat variants array for saving (used by handleSubmit)
-    const variants = variantCombinations.map(combo => {
+    const variants = variantCombinations.map((combo) => {
         const d = variantData[combo.key] || emptyVariantRow();
+        const keys = activeGroups.map((g) => g.key);
+        const colorIdx = keys.indexOf('color');
+        const displayVals = combo.rawValues.map((raw) => (raw.includes('|') ? raw.split('|')[0] : raw));
+        const rest = displayVals.filter((_, i) => i !== colorIdx);
+        const variantName =
+            rest.length > 0 ? rest.join(' / ') : displayVals.join(' / ') || 'Default';
         return {
-            name: combo.size,
-            color: combo.color,
+            key: combo.key,
+            values: combo.rawValues,
+            groupKeys: keys,
+            displayVals,
+            variantName: variantName || displayVals.join(' / ') || 'Default',
             sku: d.sku,
-            price: d.price || price,
-            salePrice: d.salePrice,
+            price: d.price || price?.toString() || '',
+            comparePrice: d.comparePrice || '',
+            salePrice: d.salePrice || '',
             stock: d.stock || '0',
         };
     });
 
     const updateVariantField = (key: string, field: string, value: string) => {
-        setVariantData(prev => ({
+        setVariantData((prev) => ({
             ...prev,
-            [key]: { ...prev[key] || emptyVariantRow(), [field]: value },
+            [key]: {
+                ...(prev[key] || emptyVariantRow()),
+                [field]: value,
+            },
         }));
     };
 
-    const bulkSetField = (field: 'price' | 'stock' | 'salePrice', value: string) => {
-        setVariantData(prev => {
+    const bulkSetField = (
+        field: 'price' | 'stock' | 'comparePrice' | 'salePrice',
+        value: string
+    ) => {
+        setVariantData((prev) => {
             const updated = { ...prev };
-            variantCombinations.forEach(combo => {
+            variantCombinations.forEach((combo) => {
                 updated[combo.key] = {
-                    ...updated[combo.key] || emptyVariantRow(),
+                    ...(updated[combo.key] || emptyVariantRow()),
                     [field]: value,
                 };
             });
             return updated;
         });
-    };
-
-    const toggleColor = (color: { name: string; hex: string }) => {
-        setSelectedColors(prev => {
-            const exists = prev.find(c => c.name === color.name);
-            if (exists) return prev.filter(c => c.name !== color.name);
-            return [...prev, color];
-        });
-    };
-
-    const toggleSize = (size: string) => {
-        setSelectedSizes(prev => {
-            if (prev.includes(size)) return prev.filter(s => s !== size);
-            return [...prev, size];
-        });
-    };
-
-    const addCustomColor = () => {
-        if (!customColorName.trim()) return;
-        const exists = selectedColors.find(c => c.name.toLowerCase() === customColorName.trim().toLowerCase());
-        if (!exists) {
-            setSelectedColors(prev => [...prev, { name: customColorName.trim(), hex: customColorHex }]);
-        }
-        setCustomColorName('');
-        setCustomColorHex('#888888');
-    };
-
-    const addCustomSize = () => {
-        if (!customSize.trim()) return;
-        if (!selectedSizes.includes(customSize.trim())) {
-            setSelectedSizes(prev => [...prev, customSize.trim()]);
-        }
-        setCustomSize('');
     };
 
     // Images
@@ -288,7 +442,7 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
         setImages(images.filter((_, idx) => idx !== indexToRemove));
     };
 
-    // Variant helpers removed — variants are now auto-generated from selectedColors × selectedSizes
+    // Variant helpers: option groups + cartesian grid (wig / LuxuryStrand model)
 
     const handleSubmit = async () => {
         try {
@@ -319,9 +473,23 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                 seo_description: metaDescription,
                 tags: (keywords as string).split(',').map((k: string) => k.trim()).filter(Boolean),
                 metadata: {
+                    ...(isEditMode && initialData?.metadata && typeof initialData.metadata === 'object'
+                        ? { ...initialData.metadata }
+                        : {}),
                     low_stock_threshold: parseInt(lowStockThreshold) || 5,
-                    preorder_shipping: preorderShipping.trim() || null
-                }
+                    preorder_shipping: preorderShipping.trim() || null,
+                    option_names: activeGroups.map((g) => g.name),
+                    product_options: Object.fromEntries(
+                        enabledDefaults.map((d) => [
+                            d.key,
+                            {
+                                values: optionGroupStates[d.key].values,
+                                generatesVariants: optionGroupStates[d.key].generatesVariants,
+                            },
+                        ])
+                    ),
+                    custom_option_groups: customGroups.filter((g) => g.values.length > 0),
+                },
             };
 
             let productId = initialData?.id;
@@ -377,20 +545,42 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                 }
 
                 if (variants.length > 0) {
-                    const variantInserts = variants.map(v => {
-                        const colorHex = selectedColors.find(c => c.name === v.color)?.hex || null;
+                    const variantInserts = variants.map((v) => {
+                        const displayVals = v.values.map((raw: string) =>
+                            raw.includes('|') ? raw.split('|')[0] : raw
+                        );
+                        const colorIdx = v.groupKeys.indexOf('color');
+                        const colorLabel = colorIdx >= 0 ? displayVals[colorIdx] : '';
+                        const rest = displayVals.filter((_: string, i: number) => i !== colorIdx);
+                        const name =
+                            rest.length > 0 ? rest.join(' / ') : displayVals.join(' / ') || 'Default';
+                        const option2 = colorLabel || null;
+                        const option1 = rest[0] ?? null;
+                        const option3 =
+                            rest.length > 1 ? rest.slice(1).join(' / ') : null;
+                        let colorHex: string | null = null;
+                        if (colorIdx >= 0 && v.values[colorIdx]?.includes('|')) {
+                            colorHex = v.values[colorIdx].split('|')[1] || null;
+                        }
                         const vSale = v.salePrice?.trim() ? parseFloat(v.salePrice) : NaN;
+                        const compareNum = v.comparePrice?.trim() ? parseFloat(v.comparePrice) : NaN;
                         return {
                             product_id: productId,
-                            name: v.name || v.color || 'Default',
+                            name,
                             sku: v.sku || null,
                             price: parseFloat(v.price) || 0,
+                            compare_at_price:
+                                !Number.isNaN(compareNum) && compareNum > 0 ? compareNum : null,
                             sale_price:
                                 !Number.isNaN(vSale) && vSale > 0 ? vSale : null,
                             quantity: parseInt(v.stock) || 0,
-                            option1: v.name || null,
-                            option2: v.color?.trim() || null,
-                            metadata: colorHex ? { color_hex: colorHex } : {}
+                            option1,
+                            option2,
+                            option3,
+                            metadata: {
+                                ...(colorHex ? { color_hex: colorHex } : {}),
+                                combo_key: v.key,
+                            },
                         };
                     });
                     const { error: varError } = await supabase.from('product_variants').insert(variantInserts);
@@ -748,239 +938,404 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                     {activeTab === 'variants' && (
                         <div className="space-y-8">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900">Product Variants</h3>
-                                <p className="text-gray-600 mt-1">Select colors and sizes below — variants are generated automatically</p>
+                                <h3 className="text-lg font-bold text-gray-900">Wig options & variants</h3>
+                                <p className="text-gray-600 mt-1">
+                                    Turn on the options that apply (lace type, length, cap size, density, colour, etc.). Mark
+                                    <span className="font-semibold text-slate-800"> Creates variants</span> when each combination
+                                    should have its own price and stock — just like on LuxuryStrand.
+                                </p>
                             </div>
 
-                            {/* STEP 1: Colors */}
-                            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                                <h4 className="text-sm font-bold text-gray-900 mb-1 flex items-center">
-                                    <i className="ri-palette-line mr-2 text-lg text-slate-700"></i>
-                                    Step 1: Select Colors
-                                    {selectedColors.length > 0 && (
-                                        <span className="ml-2 bg-slate-100 text-slate-800 text-xs font-semibold px-2 py-0.5 rounded-full">
-                                            {selectedColors.length} selected
-                                        </span>
-                                    )}
-                                </h4>
-                                <p className="text-xs text-gray-500 mb-4">Click colors to add/remove. Skip if product has no color options.</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {DEFAULT_OPTION_GROUPS.map((def) => {
+                                    const state = optionGroupStates[def.key];
+                                    if (!state) return null;
+                                    const isColor = def.type === 'color';
+                                    return (
+                                        <div
+                                            key={def.key}
+                                            className={`rounded-xl border-2 transition-all ${
+                                                state.enabled
+                                                    ? ' border-slate-700 bg-white shadow-sm'
+                                                    : 'border-gray-200 bg-gray-50 opacity-80'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between p-4 border-b border-gray-100 gap-2 flex-wrap">
+                                                <label className="flex items-center gap-3 cursor-pointer flex-1 min-w-0">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={state.enabled}
+                                                        onChange={() => toggleOptionGroup(def.key)}
+                                                        className="w-5 h-5 text-slate-700 border-gray-300 rounded cursor-pointer flex-shrink-0"
+                                                    />
+                                                    <span className="font-bold text-gray-900">{def.label}</span>
+                                                    {state.enabled && state.generatesVariants && (
+                                                        <span className="text-xs font-medium bg-violet-100 text-violet-800 px-2 py-0.5 rounded-full whitespace-nowrap">
+                                                            Creates variants
+                                                        </span>
+                                                    )}
+                                                </label>
+                                                {state.enabled && (
+                                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => toggleGeneratesVariants(def.key)}
+                                                            className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                                                                state.generatesVariants
+                                                                    ? 'bg-violet-100 border-violet-300 text-violet-800'
+                                                                    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400'
+                                                            }`}
+                                                            title="Use separate price/stock per combination for this option"
+                                                        >
+                                                            {state.generatesVariants ? 'Variants: on' : 'Variants: off (info only)'}
+                                                        </button>
+                                                        {!isColor && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => resetGroupToDefaults(def.key)}
+                                                                className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1"
+                                                                title="Reset list to defaults"
+                                                            >
+                                                                <i className="ri-refresh-line"></i>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {def.help && (
+                                                <p className="px-4 pt-3 text-xs text-gray-500 leading-relaxed">{def.help}</p>
+                                            )}
+                                            {state.enabled && (
+                                                <div className="p-4 space-y-3">
+                                                    {state.values.length > 0 && (
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {state.values.map((val) => {
+                                                                if (isColor) {
+                                                                    const [name, hex] = val.split('|');
+                                                                    return (
+                                                                        <span
+                                                                            key={val}
+                                                                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-sm font-medium shadow-sm"
+                                                                        >
+                                                                            <span
+                                                                                className="w-4 h-4 rounded-full border border-gray-300 flex-shrink-0"
+                                                                                style={{ backgroundColor: hex || '#000' }}
+                                                                            />
+                                                                            {name}
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => removeValueFromGroup('color', val)}
+                                                                                className="text-gray-400 hover:text-red-500"
+                                                                            >
+                                                                                <i className="ri-close-line text-sm"></i>
+                                                                            </button>
+                                                                        </span>
+                                                                    );
+                                                                }
+                                                                return (
+                                                                    <span
+                                                                        key={val}
+                                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-sm font-medium shadow-sm"
+                                                                    >
+                                                                        {val}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => removeValueFromGroup(def.key, val)}
+                                                                            className="text-gray-400 hover:text-red-500"
+                                                                        >
+                                                                            <i className="ri-close-line text-sm"></i>
+                                                                        </button>
+                                                                    </span>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                    {isColor ? (
+                                                        <div className="flex items-center gap-2 pt-2 border-t border-gray-100 flex-wrap">
+                                                            <input
+                                                                type="color"
+                                                                value={colorPickerHex}
+                                                                onChange={(e) => setColorPickerHex(e.target.value)}
+                                                                className="w-10 h-10 rounded-lg border-2 border-gray-200 cursor-pointer p-0.5"
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                value={colorPickerName}
+                                                                onChange={(e) => setColorPickerName(e.target.value)}
+                                                                placeholder="Colour name (e.g. 1B, 613, Highlighted)"
+                                                                className="flex-1 min-w-[8rem] px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                                                onKeyDown={(e) => e.key === 'Enter' && addColorValue()}
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={addColorValue}
+                                                                className="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 transition-colors"
+                                                            >
+                                                                Add
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-2 pt-2 border-t border-gray-100 flex-wrap">
+                                                            <input
+                                                                type="text"
+                                                                value={customOptionInput[def.key] || ''}
+                                                                onChange={(e) =>
+                                                                    setCustomOptionInput((prev) => ({
+                                                                        ...prev,
+                                                                        [def.key]: e.target.value,
+                                                                    }))
+                                                                }
+                                                                placeholder={`Add ${def.label.toLowerCase()}…`}
+                                                                className="flex-1 min-w-[8rem] px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                                                onKeyDown={(e) =>
+                                                                    e.key === 'Enter' &&
+                                                                    addValueToGroup(def.key, customOptionInput[def.key] || '')
+                                                                }
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    addValueToGroup(def.key, customOptionInput[def.key] || '')
+                                                                }
+                                                                disabled={!(customOptionInput[def.key] || '').trim()}
+                                                                className="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                                            >
+                                                                Add
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
 
-                                <div className="flex flex-wrap gap-2 mb-4">
-                                    {colorPresets.map(color => {
-                                        const isSelected = selectedColors.some(c => c.name === color.name);
-                                        return (
-                                            <button
-                                                key={color.name}
-                                                onClick={() => toggleColor(color)}
-                                                className={`flex items-center space-x-2 px-3 py-2 rounded-lg border-2 transition-all text-sm font-medium ${isSelected
-                                                        ? 'border-slate-600 bg-slate-50 ring-1 ring-slate-600'
-                                                        : 'border-gray-200 hover:border-gray-300 bg-white'
-                                                    }`}
-                                                title={color.name}
-                                            >
-                                                <span
-                                                    className="w-5 h-5 rounded-full border border-gray-300 flex-shrink-0"
-                                                    style={{ backgroundColor: color.hex }}
-                                                ></span>
-                                                <span className={isSelected ? 'text-slate-800' : 'text-gray-700'}>{color.name}</span>
-                                                {isSelected && <i className="ri-check-line text-slate-700"></i>}
-                                            </button>
-                                        );
-                                    })}
+                            <div className="border-t border-gray-200 pt-6">
+                                <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                                    <div>
+                                        <h4 className="font-bold text-gray-900">Custom option groups</h4>
+                                        <p className="text-sm text-gray-500">
+                                            For add-ons that aren’t in the list above (e.g. parting style). You can still mark a
+                                            group as variant-driving.
+                                        </p>
+                                    </div>
                                 </div>
-
-                                {/* Custom color */}
-                                <div className="flex items-center gap-2 pt-3 border-t border-gray-200">
-                                    <input
-                                        type="color"
-                                        value={customColorHex}
-                                        onChange={(e) => setCustomColorHex(e.target.value)}
-                                        className="w-10 h-10 rounded-lg border border-gray-300 cursor-pointer p-0.5"
-                                        title="Pick a custom color"
-                                    />
+                                <div className="flex items-center gap-2 mb-4 flex-wrap">
                                     <input
                                         type="text"
-                                        value={customColorName}
-                                        onChange={(e) => setCustomColorName(e.target.value)}
-                                        placeholder="Custom color name"
-                                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                                        onKeyDown={(e) => e.key === 'Enter' && addCustomColor()}
+                                        value={customGroupInput}
+                                        onChange={(e) => setCustomGroupInput(e.target.value)}
+                                        placeholder="Group name (e.g. Bleached knots)"
+                                        className="flex-1 min-w-[10rem] px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                        onKeyDown={(e) => e.key === 'Enter' && addCustomGroup()}
                                     />
                                     <button
-                                        onClick={addCustomColor}
-                                        disabled={!customColorName.trim()}
-                                        className="px-4 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                        type="button"
+                                        onClick={addCustomGroup}
+                                        disabled={!customGroupInput.trim()}
+                                        className="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                                     >
-                                        Add Color
+                                        <i className="ri-add-line mr-1"></i> Add group
                                     </button>
                                 </div>
-
-                                {/* Selected colors summary */}
-                                {selectedColors.length > 0 && (
-                                    <div className="mt-4 flex flex-wrap gap-2">
-                                        {selectedColors.map(color => (
-                                            <span key={color.name} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-sm shadow-sm">
-                                                <span className="w-3.5 h-3.5 rounded-full border border-gray-300" style={{ backgroundColor: color.hex }}></span>
-                                                {color.name}
-                                                <button onClick={() => toggleColor(color)} className="text-gray-400 hover:text-red-500 ml-1">
-                                                    <i className="ri-close-line text-sm"></i>
-                                                </button>
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* STEP 2: Sizes */}
-                            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                                <h4 className="text-sm font-bold text-gray-900 mb-1 flex items-center">
-                                    <i className="ri-ruler-line mr-2 text-lg text-slate-600"></i>
-                                    Step 2: Select Sizes
-                                    {selectedSizes.length > 0 && (
-                                        <span className="ml-2 bg-slate-100 text-slate-800 text-xs font-semibold px-2 py-0.5 rounded-full">
-                                            {selectedSizes.length} selected
-                                        </span>
-                                    )}
-                                </h4>
-                                <p className="text-xs text-gray-500 mb-4">Click sizes to add/remove. Use custom for volumes (100ml), weights, etc.</p>
-
-                                <div className="flex flex-wrap gap-2 mb-4">
-                                    {sizePresets.map(size => {
-                                        const isSelected = selectedSizes.includes(size);
-                                        return (
-                                            <button
-                                                key={size}
-                                                onClick={() => toggleSize(size)}
-                                                className={`px-5 py-2.5 rounded-lg border-2 font-semibold text-sm transition-all ${isSelected
-                                                        ? 'border-slate-600 bg-slate-50 text-slate-800 ring-1 ring-slate-600'
-                                                        : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700'
+                                {customGroups.map((g, idx) => (
+                                    <div
+                                        key={`${g.name}-${idx}`}
+                                        className="bg-gray-50 rounded-xl p-4 border border-gray-200 mb-3"
+                                    >
+                                        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                                            <span className="font-semibold text-gray-900">{g.name}</span>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setCustomGroups((prev) =>
+                                                            prev.map((cg, i) =>
+                                                                i === idx
+                                                                    ? { ...cg, generatesVariants: !cg.generatesVariants }
+                                                                    : cg
+                                                            )
+                                                        )
+                                                    }
+                                                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                                                        g.generatesVariants
+                                                            ? 'bg-violet-100 border-violet-300 text-violet-800'
+                                                            : 'bg-white border-gray-200 text-gray-500'
                                                     }`}
-                                            >
-                                                {size}
-                                                {isSelected && <i className="ri-check-line ml-1.5 text-slate-600"></i>}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-
-                                {/* Custom size */}
-                                <div className="flex items-center gap-2 pt-3 border-t border-gray-200">
-                                    <input
-                                        type="text"
-                                        value={customSize}
-                                        onChange={(e) => setCustomSize(e.target.value)}
-                                        placeholder="Custom size (e.g. 100ml, One Size, 42)"
-                                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                                        onKeyDown={(e) => e.key === 'Enter' && addCustomSize()}
-                                    />
-                                    <button
-                                        onClick={addCustomSize}
-                                        disabled={!customSize.trim()}
-                                        className="px-4 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        Add Size
-                                    </button>
-                                </div>
-
-                                {/* Selected sizes summary */}
-                                {selectedSizes.length > 0 && (
-                                    <div className="mt-4 flex flex-wrap gap-2">
-                                        {selectedSizes.map(size => (
-                                            <span key={size} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-sm shadow-sm font-medium">
-                                                {size}
-                                                <button onClick={() => toggleSize(size)} className="text-gray-400 hover:text-red-500 ml-1">
-                                                    <i className="ri-close-line text-sm"></i>
+                                                >
+                                                    {g.generatesVariants ? 'Variants: on' : 'Variants: off'}
                                                 </button>
-                                            </span>
-                                        ))}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeCustomGroup(idx)}
+                                                    className="text-gray-400 hover:text-red-500"
+                                                >
+                                                    <i className="ri-delete-bin-line"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        {g.values.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 mb-3">
+                                                {g.values.map((val) => (
+                                                    <span
+                                                        key={val}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-sm font-medium shadow-sm"
+                                                    >
+                                                        {val}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeCustomGroupValue(idx, val)}
+                                                            className="text-gray-400 hover:text-red-500"
+                                                        >
+                                                            <i className="ri-close-line text-sm"></i>
+                                                        </button>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <input
+                                                type="text"
+                                                value={customOptionInput[`custom_${idx}`] || ''}
+                                                onChange={(e) =>
+                                                    setCustomOptionInput((prev) => ({
+                                                        ...prev,
+                                                        [`custom_${idx}`]: e.target.value,
+                                                    }))
+                                                }
+                                                placeholder={`Add ${g.name.toLowerCase()}…`}
+                                                className="flex-1 min-w-[8rem] px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                                onKeyDown={(e) =>
+                                                    e.key === 'Enter' &&
+                                                    addCustomGroupValue(idx, customOptionInput[`custom_${idx}`] || '')
+                                                }
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    addCustomGroupValue(idx, customOptionInput[`custom_${idx}`] || '')
+                                                }
+                                                disabled={!(customOptionInput[`custom_${idx}`] || '').trim()}
+                                                className="px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                            >
+                                                Add
+                                            </button>
+                                        </div>
                                     </div>
-                                )}
+                                ))}
                             </div>
 
-                            {/* STEP 3: Variant Grid */}
                             {variantCombinations.length > 0 && (
                                 <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                                    <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-                                        <div>
-                                            <h4 className="text-sm font-bold text-gray-900 flex items-center">
-                                                <i className="ri-grid-line mr-2 text-lg text-blue-600"></i>
-                                                Step 3: Set Price & Stock ({variantCombinations.length} variant{variantCombinations.length > 1 ? 's' : ''})
-                                            </h4>
-                                        </div>
-                                        <div className="flex items-center gap-2">
+                                    <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
+                                        <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                                            <i className="ri-grid-line text-lg text-violet-600"></i>
+                                            Price & stock — {variantCombinations.length} variant
+                                            {variantCombinations.length > 1 ? 's' : ''}
+                                        </h4>
+                                        <div className="flex items-center gap-2 flex-wrap">
                                             <button
+                                                type="button"
                                                 onClick={() => {
-                                                    const val = prompt('Set price for ALL variants:', price?.toString() || '0');
+                                                    const val = prompt('Compare-at (was) price for ALL variants (GH₵):', '');
+                                                    if (val !== null) bulkSetField('comparePrice', val);
+                                                }}
+                                                className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+                                            >
+                                                Bulk compare price
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const val = prompt('Regular price for ALL variants (GH₵):', price?.toString() || '0');
                                                     if (val !== null) bulkSetField('price', val);
                                                 }}
                                                 className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
                                             >
-                                                Bulk Set Price
+                                                Bulk regular price
                                             </button>
                                             <button
+                                                type="button"
                                                 onClick={() => {
-                                                    const val = prompt('Set stock for ALL variants:', '0');
-                                                    if (val !== null) bulkSetField('stock', val);
-                                                }}
-                                                className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
-                                            >
-                                                Bulk Set Stock
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    const val = prompt('Set sale price for ALL variants (empty to clear):', '');
+                                                    const val = prompt('Sale price for ALL variants when site sale is ON (empty to clear):', '');
                                                     if (val !== null) bulkSetField('salePrice', val);
                                                 }}
                                                 className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
                                             >
-                                                Bulk Sale Price
+                                                Bulk sale price
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const val = prompt('Stock qty for ALL variants:', '0');
+                                                    if (val !== null) bulkSetField('stock', val);
+                                                }}
+                                                className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+                                            >
+                                                Bulk stock
                                             </button>
                                         </div>
                                     </div>
-
                                     <div className="overflow-x-auto">
                                         <table className="w-full">
                                             <thead className="bg-gray-50 border-b border-gray-200">
                                                 <tr>
-                                                    {selectedColors.length > 0 && (
-                                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Color</th>
-                                                    )}
-                                                    {selectedSizes.length > 0 && (
-                                                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Size</th>
-                                                    )}
-                                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Price (GH₵)</th>
-                                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Sale (GH₵)</th>
+                                                    {activeGroups.map((g, i) => (
+                                                        <th key={i} className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                                                            {g.name}
+                                                        </th>
+                                                    ))}
+                                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                                                        Compare (GH₵)
+                                                    </th>
+                                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                                                        Regular (GH₵)
+                                                    </th>
+                                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                                                        Sale (GH₵)
+                                                    </th>
+                                                    <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
+                                                        Off %
+                                                    </th>
                                                     <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Stock</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {variantCombinations.map((combo) => {
                                                     const d = variantData[combo.key] || emptyVariantRow();
+                                                    const saleNum = parseFloat(d.price) || 0;
+                                                    const origNum = parseFloat(d.comparePrice) || 0;
+                                                    const hasOff = origNum > 0 && saleNum > 0 && origNum > saleNum;
+                                                    const offPct = hasOff ? Math.round(((origNum - saleNum) / origNum) * 100) : 0;
                                                     return (
                                                         <tr key={combo.key} className="border-b border-gray-100 hover:bg-gray-50">
-                                                            {selectedColors.length > 0 && (
-                                                                <td className="py-3 px-4">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span
-                                                                            className="w-5 h-5 rounded-full border border-gray-300 flex-shrink-0"
-                                                                            style={{ backgroundColor: combo.colorHex }}
-                                                                        ></span>
-                                                                        <span className="text-sm font-medium text-gray-900">{combo.color}</span>
-                                                                    </div>
-                                                                </td>
-                                                            )}
-                                                            {selectedSizes.length > 0 && (
-                                                                <td className="py-3 px-4">
+                                                            {combo.values.map((cell, vi) => (
+                                                                <td key={vi} className="py-3 px-4">
                                                                     <span className="text-sm font-semibold text-gray-900 bg-gray-100 px-2.5 py-1 rounded">
-                                                                        {combo.size}
+                                                                        {cell}
                                                                     </span>
                                                                 </td>
-                                                            )}
+                                                            ))}
+                                                            <td className="py-3 px-4">
+                                                                <input
+                                                                    type="number"
+                                                                    value={d.comparePrice}
+                                                                    onChange={(e) =>
+                                                                        updateVariantField(combo.key, 'comparePrice', e.target.value)
+                                                                    }
+                                                                    className="w-28 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                                                                    step="0.01"
+                                                                    placeholder="—"
+                                                                />
+                                                            </td>
                                                             <td className="py-3 px-4">
                                                                 <input
                                                                     type="number"
                                                                     value={d.price}
-                                                                    onChange={(e) => updateVariantField(combo.key, 'price', e.target.value)}
+                                                                    onChange={(e) =>
+                                                                        updateVariantField(combo.key, 'price', e.target.value)
+                                                                    }
                                                                     className="w-28 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
                                                                     step="0.01"
                                                                     placeholder={price?.toString() || '0'}
@@ -990,17 +1345,30 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                                                                 <input
                                                                     type="number"
                                                                     value={d.salePrice}
-                                                                    onChange={(e) => updateVariantField(combo.key, 'salePrice', e.target.value)}
+                                                                    onChange={(e) =>
+                                                                        updateVariantField(combo.key, 'salePrice', e.target.value)
+                                                                    }
                                                                     className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
                                                                     step="0.01"
                                                                     placeholder="—"
                                                                 />
                                                             </td>
+                                                            <td className="py-3 px-4 text-center">
+                                                                {hasOff ? (
+                                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-700">
+                                                                        −{offPct}%
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-xs text-gray-400">—</span>
+                                                                )}
+                                                            </td>
                                                             <td className="py-3 px-4">
                                                                 <input
                                                                     type="number"
                                                                     value={d.stock}
-                                                                    onChange={(e) => updateVariantField(combo.key, 'stock', e.target.value)}
+                                                                    onChange={(e) =>
+                                                                        updateVariantField(combo.key, 'stock', e.target.value)
+                                                                    }
                                                                     className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
                                                                     placeholder="0"
                                                                 />
@@ -1011,26 +1379,32 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                                             </tbody>
                                         </table>
                                     </div>
-
-                                    <div className="p-3 bg-slate-50 border-t border-slate-100">
+                                    <div className="p-3 bg-slate-50 border-t border-gray-100 flex flex-wrap items-center gap-4">
                                         <p className="text-xs text-slate-800 flex items-center">
                                             <i className="ri-information-line mr-1.5"></i>
-                                            Total stock across all variants: <strong className="ml-1">{variants.reduce((sum, v) => sum + (parseInt(v.stock) || 0), 0)}</strong>
+                                            Total stock:{' '}
+                                            <strong className="ml-1">
+                                                {variants.reduce((sum, v) => sum + (parseInt(v.stock) || 0), 0)}
+                                            </strong>
                                         </p>
                                     </div>
                                 </div>
                             )}
 
-                            {variantCombinations.length === 0 && (
-                                <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                                    <i className="ri-palette-line text-4xl text-gray-300 mb-2 block"></i>
-                                    <p className="font-medium">No variants configured</p>
-                                    <p className="text-sm mt-1">Select colors and/or sizes above to create variant combinations.</p>
-                                    <p className="text-xs mt-2 text-gray-400">You can add just colors, just sizes, or both for a full grid.</p>
+                            {variantCombinations.length === 0 && activeGroups.length === 0 && (
+                                <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                                    <i className="ri-brush-line text-4xl text-gray-300 mb-3 block"></i>
+                                    <p className="font-semibold text-gray-700">No variant-driving options enabled</p>
+                                    <p className="text-sm mt-1 max-w-lg mx-auto">
+                                        Turn on <strong>Creates variants</strong> for at least one option (usually hair length, or
+                                        length × colour) to build the price/stock grid. Leave options on without “Creates variants”
+                                        if you only want to show lace type or density as information on the PDP later.
+                                    </p>
                                 </div>
                             )}
                         </div>
                     )}
+
 
                     {activeTab === 'images' && (
                         <div className="space-y-6">
