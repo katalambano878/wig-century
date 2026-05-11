@@ -318,6 +318,35 @@ export default function CheckoutPage() {
         }
       }
 
+      if (paymentMethod === 'paystack') {
+        try {
+          const paymentRes = await fetch('/api/payment/paystack', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId: orderNumber,
+              customerEmail: shippingData.email,
+            }),
+          });
+
+          const paymentResult = await paymentRes.json();
+
+          if (!paymentResult.success) {
+            throw new Error(paymentResult.message || 'Payment initialization failed');
+          }
+
+          clearCart();
+          window.location.href = paymentResult.url;
+          return;
+        } catch (paymentErr: unknown) {
+          console.error('Paystack payment error:', paymentErr);
+          const msg = paymentErr instanceof Error ? paymentErr.message : 'Payment failed';
+          alert('Failed to initialize card payment: ' + msg);
+          setIsLoading(false);
+          return;
+        }
+      }
+
       // 5. Send Notifications (For COD or others)
       fetch('/api/notifications', {
         method: 'POST',
@@ -631,6 +660,55 @@ export default function CheckoutPage() {
                     */}
                   </div>
 
+                  <div className="mt-8">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Payment method</h3>
+                    <div className="space-y-3">
+                      <label
+                        className={`flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                          paymentMethod === 'moolre' ? 'border-slate-700 bg-slate-50' : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-4">
+                          <input
+                            type="radio"
+                            name="payment"
+                            value="moolre"
+                            checked={paymentMethod === 'moolre'}
+                            onChange={() => setPaymentMethod('moolre')}
+                            className="w-5 h-5 text-slate-700"
+                          />
+                          <div>
+                            <p className="font-semibold text-gray-900">Mobile Money</p>
+                            <p className="text-sm text-gray-600">Pay with MTN, Telecel, or AirtelTigo via Moolre</p>
+                          </div>
+                        </div>
+                        <i className="ri-smartphone-line text-2xl text-slate-600" />
+                      </label>
+
+                      <label
+                        className={`flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                          paymentMethod === 'paystack' ? 'border-slate-700 bg-slate-50' : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-4">
+                          <input
+                            type="radio"
+                            name="payment"
+                            value="paystack"
+                            checked={paymentMethod === 'paystack'}
+                            onChange={() => setPaymentMethod('paystack')}
+                            className="w-5 h-5 text-slate-700"
+                          />
+                          <div>
+                            <p className="font-semibold text-gray-900">Card Payments</p>
+                            <p className="text-sm text-gray-600">Visa, Mastercard, and other cards via Paystack</p>
+                          </div>
+                        </div>
+                        <i className="ri-bank-card-line text-2xl text-slate-600" />
+                      </label>
+                    </div>
+                  </div>
+
                   <div className="flex flex-col-reverse md:flex-row gap-4 mt-6">
                     <button
                       onClick={() => setCurrentStep(1)}
@@ -652,6 +730,8 @@ export default function CheckoutPage() {
                           </svg>
                           Processing...
                         </>
+                      ) : paymentMethod === 'paystack' ? (
+                        'Pay with Card'
                       ) : (
                         'Pay with Mobile Money'
                       )}

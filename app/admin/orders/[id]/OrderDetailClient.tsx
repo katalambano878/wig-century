@@ -191,28 +191,41 @@ export default function OrderDetailClient({ orderId }: OrderDetailClientProps) {
   const [resendingNotification, setResendingNotification] = useState(false);
   const [reconciling, setReconciling] = useState(false);
 
-  // Re-check a pending Moolre payment against Moolre's authenticated
-  // /embed/status API. Marks the order paid only if Moolre confirms.
+  // Re-check pending online payments against the provider API (Moolre / Paystack).
   const handleReconcile = async () => {
     if (!order?.order_number) return;
     try {
       setReconciling(true);
-      const res = await fetch('/api/payment/moolre/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderNumber: order.order_number }),
-      });
+      const isPaystack = order.payment_method === 'paystack';
+      const ref = isPaystack
+        ? typeof order.metadata?.paystack_reference === 'string' && order.metadata.paystack_reference
+          ? order.metadata.paystack_reference
+          : typeof order.metadata?.moolre_reference === 'string'
+            ? order.metadata.moolre_reference
+            : undefined
+        : undefined;
+      const res = await fetch(
+        isPaystack ? '/api/payment/paystack/verify' : '/api/payment/moolre/verify',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderNumber: order.order_number,
+            ...(isPaystack && ref ? { reference: ref } : {}),
+          }),
+        },
+      );
       const payload = await res.json();
 
       if (payload.success && payload.payment_status === 'paid') {
-        alert('Verified with Moolre — order marked as paid.');
+        alert(`Verified with ${isPaystack ? 'Paystack' : 'Moolre'} — order marked as paid.`);
       } else {
-        alert(payload.message || 'Could not verify with Moolre yet. Try again in a moment.');
+        alert(payload.message || 'Could not verify payment yet. Try again in a moment.');
       }
 
       await fetchOrderDetails();
-    } catch (err: any) {
-      alert(err?.message || 'Reconcile failed');
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Reconcile failed');
     } finally {
       setReconciling(false);
     }
@@ -596,7 +609,7 @@ export default function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                 </div>
               </div>
 
-              {order.payment_method === 'moolre' &&
+              {['moolre', 'paystack'].includes(String(order.payment_method)) &&
                 order.payment_status !== 'paid' &&
                 order.payment_status !== 'refunded' && (
                   <div className="mt-4 pt-4 border-t border-gray-100">
@@ -608,18 +621,18 @@ export default function OrderDetailClient({ orderId }: OrderDetailClientProps) {
                       {reconciling ? (
                         <>
                           <i className="ri-loader-4-line animate-spin" />
-                          Checking with Moolre…
+                          Checking with {order.payment_method === 'paystack' ? 'Paystack' : 'Moolre'}…
                         </>
                       ) : (
                         <>
                           <i className="ri-refresh-line" />
-                          Reconcile with Moolre
+                          Reconcile with {order.payment_method === 'paystack' ? 'Paystack' : 'Moolre'}
                         </>
                       )}
                     </button>
                     <p className="mt-2 text-xs text-gray-500 leading-relaxed">
-                      Re-checks this transaction against Moolre. Marks the order paid only
-                      if Moolre confirms the payment.
+                      Re-checks this transaction with the payment provider. Marks the order paid only if
+                      they confirm the payment.
                     </p>
                   </div>
                 )}

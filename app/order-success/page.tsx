@@ -9,6 +9,7 @@ function OrderSuccessContent() {
   const searchParams = useSearchParams();
   const orderNumber = searchParams.get('order');
   const paymentSuccess = searchParams.get('payment_success');
+  const paystackRef = searchParams.get('trxref');
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState(false);
@@ -44,11 +45,12 @@ function OrderSuccessContent() {
       try {
         let orderData = await fetchOrder();
         if (cancelled) return;
+        if (orderData && !cancelled) setOrder(orderData);
 
         const needsReconcile =
           paymentSuccessFlag &&
           orderData &&
-          orderData.payment_method === 'moolre' &&
+          (orderData.payment_method === 'moolre' || orderData.payment_method === 'paystack') &&
           orderData.payment_status !== 'paid' &&
           orderData.payment_status !== 'refunded';
 
@@ -63,11 +65,18 @@ function OrderSuccessContent() {
               orderData = refreshed;
             } else {
               try {
-                const res = await fetch('/api/payment/moolre/verify', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ orderNumber }),
-                });
+                const isPaystack = orderData.payment_method === 'paystack';
+                const res = await fetch(
+                  isPaystack ? '/api/payment/paystack/verify' : '/api/payment/moolre/verify',
+                  {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      orderNumber,
+                      ...(isPaystack && paystackRef ? { reference: paystackRef } : {}),
+                    }),
+                  },
+                );
                 const result = await res.json().catch(() => ({}));
                 if (result?.success && result?.payment_status === 'paid') {
                   const updated = await fetchOrder();
@@ -98,7 +107,9 @@ function OrderSuccessContent() {
     return () => {
       cancelled = true;
     };
-  }, [orderNumber, paymentSuccessFlag]);
+    // fetchOrder is stable enough — depends only on orderNumber which is in deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderNumber, paymentSuccessFlag, paystackRef]);
 
   useEffect(() => {
     if (!order || !orderNumber) return;
@@ -171,11 +182,16 @@ function OrderSuccessContent() {
   const isPaid = order.payment_status === 'paid';
   const showLoyalty = !user && pointsEarned > 0;
 
+  const verifyingCopy =
+    order?.payment_method === 'paystack'
+      ? "We're confirming your card payment with Paystack. This page will update automatically — no need to refresh."
+      : "We're confirming your payment with Moolre. This page will update automatically — no need to refresh.";
+
   const status = verifying
     ? {
         label: 'Verifying payment',
         title: 'Almost there…',
-        copy: "We're confirming your payment with Moolre. This page will update automatically — no need to refresh.",
+        copy: verifyingCopy,
         icon: 'ri-loader-4-line',
         spin: true,
         ring: 'bg-blue-50 border-blue-100',
