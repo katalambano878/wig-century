@@ -21,6 +21,11 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'via.placeholder.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'placehold.co',
+        pathname: '/**',
+      },
     ],
   },
   eslint: {
@@ -32,7 +37,7 @@ const nextConfig: NextConfig = {
     // TypeScript checks enabled - type errors will fail build
     ignoreBuildErrors: false,
   },
-  webpack: (config, { dev }) => {
+  webpack: (config) => {
     // Suppress "Serializing big strings" cache warning (cosmetic only)
     config.infrastructureLogging = {
       level: 'error',

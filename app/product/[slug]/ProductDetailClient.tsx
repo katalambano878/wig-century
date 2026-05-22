@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { isVideoUrl } from '@/components/LazyImage';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { cachedQuery } from '@/lib/query-cache';
@@ -333,15 +334,29 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
               {/* ── GALLERY ───────────────────────────────── */}
               <div>
                 <div className="relative aspect-square rounded-3xl overflow-hidden bg-slate-100 group">
-                  <Image
-                    src={product.images[selectedImage]}
-                    alt={product.name}
-                    fill
-                    className="object-cover object-center transition-transform duration-[1500ms] ease-[cubic-bezier(0.25,0.1,0.25,1)] group-hover:scale-[1.04]"
-                    sizes="(max-width: 1024px) 100vw, 55vw"
-                    priority
-                    quality={85}
-                  />
+                  {isVideoUrl(product.images[selectedImage]) ? (
+                    <video
+                      key={product.images[selectedImage]}
+                      src={product.images[selectedImage]}
+                      className="absolute inset-0 w-full h-full object-cover object-center"
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      controls
+                      preload="metadata"
+                    />
+                  ) : (
+                    <Image
+                      src={product.images[selectedImage]}
+                      alt={product.name}
+                      fill
+                      className="object-cover object-center transition-transform duration-[1500ms] ease-[cubic-bezier(0.25,0.1,0.25,1)] group-hover:scale-[1.04]"
+                      sizes="(max-width: 1024px) 100vw, 55vw"
+                      priority
+                      quality={85}
+                    />
+                  )}
                   <div className="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-3xl pointer-events-none" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/[0.04] via-transparent to-transparent pointer-events-none" />
 
@@ -373,26 +388,45 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                 {/* Thumbnails */}
                 {product.images.length > 1 && (
                   <div className="mt-4 grid grid-cols-5 gap-3">
-                    {product.images.slice(0, 5).map((image: string, index: number) => (
-                      <button
-                        key={index}
-                        onClick={() => setSelectedImage(index)}
-                        className={`relative aspect-square rounded-xl overflow-hidden border transition-all cursor-pointer ${
-                          selectedImage === index
-                            ? 'border-slate-900 shadow-md ring-2 ring-blue-200'
-                            : 'border-slate-200 hover:border-slate-400'
-                        }`}
-                      >
-                        <Image
-                          src={image}
-                          alt={`${product.name} view ${index + 1}`}
-                          fill
-                          className="object-cover object-center"
-                          sizes="(max-width: 1024px) 20vw, 10vw"
-                          quality={60}
-                        />
-                      </button>
-                    ))}
+                    {product.images.slice(0, 5).map((image: string, index: number) => {
+                      const isVid = isVideoUrl(image);
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => setSelectedImage(index)}
+                          className={`relative aspect-square rounded-xl overflow-hidden border transition-all cursor-pointer ${
+                            selectedImage === index
+                              ? 'border-slate-900 shadow-md ring-2 ring-blue-200'
+                              : 'border-slate-200 hover:border-slate-400'
+                          }`}
+                          aria-label={isVid ? `${product.name} video ${index + 1}` : `${product.name} view ${index + 1}`}
+                        >
+                          {isVid ? (
+                            <>
+                              <video
+                                src={image}
+                                className="absolute inset-0 w-full h-full object-cover object-center"
+                                muted
+                                playsInline
+                                preload="metadata"
+                              />
+                              <span className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                                <i className="ri-play-fill text-white text-2xl drop-shadow"></i>
+                              </span>
+                            </>
+                          ) : (
+                            <Image
+                              src={image}
+                              alt={`${product.name} view ${index + 1}`}
+                              fill
+                              className="object-cover object-center"
+                              sizes="(max-width: 1024px) 20vw, 10vw"
+                              quality={60}
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>

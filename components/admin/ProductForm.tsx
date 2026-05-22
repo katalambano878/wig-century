@@ -42,7 +42,7 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
         return `${prefix}-${timestamp}-${random}`;
     };
 
-    // ── Wig / hair option groups (same model as LuxuryStrand) ─────────────
+    // ── Wig / hair option groups ─────────────
     type OptionGroupDef = {
         key: string;
         label: string;
@@ -50,16 +50,100 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
         defaultValues: string[];
         generatesVariants: boolean;
         help?: string;
+        icon: string;
+        accent: 'rose' | 'amber' | 'sky' | 'violet' | 'emerald' | 'indigo';
+        presets?: { label: string; values: string[] }[];
     };
 
     const DEFAULT_OPTION_GROUPS: OptionGroupDef[] = [
-        { key: 'color', label: 'Hair colour', type: 'color', defaultValues: [], generatesVariants: false, help: 'Swatches on the product page use this option.' },
-        { key: 'lace_type', label: 'Lace type', type: 'values', defaultValues: ['HD Lace', 'Transparent Lace'], generatesVariants: false, help: 'e.g. HD vs transparent — turn on “Creates variants” if price/stock differ.' },
-        { key: 'lace_length', label: 'Lace size (closure / frontal)', type: 'values', defaultValues: ['2x6', '4x4', '5x5', '6x6', '7x7', '13x4', '13x6'], generatesVariants: false },
-        { key: 'length', label: 'Hair length', type: 'values', defaultValues: ['10\"', '12\"', '14\"', '16\"', '18\"', '20\"', '22\"', '24\"', '26\"', '28\"', '30\"'], generatesVariants: true, help: 'Often drives different prices per inch.' },
-        { key: 'wig_size', label: 'Wig cap size', type: 'values', defaultValues: ['Small', 'Medium', 'Large', 'Extra Large'], generatesVariants: false },
-        { key: 'density', label: 'Density', type: 'values', defaultValues: ['150%', '180%', '200%', '250%', '300%', '350%'], generatesVariants: false },
+        {
+            key: 'color',
+            label: 'Hair colour',
+            type: 'color',
+            defaultValues: [],
+            generatesVariants: false,
+            help: 'Swatches on the product page use this option. Naming convention: 1B, 4, 27, 613, etc.',
+            icon: 'ri-palette-line',
+            accent: 'rose',
+            presets: [
+                { label: 'Naturals (1, 1B, 2, 4)', values: ['1|#0a0a0a', '1B|#1a1a1a', '2|#2c1810', '4|#4a2a17'] },
+                { label: 'Blondes (22, 27, 30, 613)', values: ['22|#c7a577', '27|#a67c52', '30|#6e4b2c', '613|#f0d99b'] },
+                { label: 'Reds & Burgundy', values: ['33|#7a2e1d', '99J|#562020', 'Burgundy|#56122a'] },
+            ],
+        },
+        {
+            key: 'lace_type',
+            label: 'Lace type',
+            type: 'values',
+            defaultValues: ['HD Lace', 'Transparent Lace'],
+            generatesVariants: false,
+            help: 'Turn on “Creates variants” only if HD vs transparent should have different prices.',
+            icon: 'ri-shape-line',
+            accent: 'amber',
+        },
+        {
+            key: 'lace_length',
+            label: 'Lace size (closure / frontal)',
+            type: 'values',
+            defaultValues: ['2x6', '4x4', '5x5', '6x6', '7x7', '13x4', '13x6'],
+            generatesVariants: false,
+            icon: 'ri-aspect-ratio-line',
+            accent: 'sky',
+            presets: [
+                { label: 'Closures only (2x6, 4x4, 5x5)', values: ['2x6', '4x4', '5x5'] },
+                { label: 'Frontals only (13x4, 13x6)', values: ['13x4', '13x6'] },
+                { label: 'Full set', values: ['2x6', '4x4', '5x5', '6x6', '7x7', '13x4', '13x6'] },
+            ],
+        },
+        {
+            key: 'length',
+            label: 'Hair length',
+            type: 'values',
+            defaultValues: ['10\"', '12\"', '14\"', '16\"', '18\"', '20\"', '22\"', '24\"', '26\"', '28\"', '30\"'],
+            generatesVariants: true,
+            help: 'Most wigs price differently by inch. Use the pricing curve below to auto-fill prices.',
+            icon: 'ri-ruler-line',
+            accent: 'violet',
+            presets: [
+                { label: 'Short (10–14")', values: ['10\"', '12\"', '14\"'] },
+                { label: 'Medium (16–22")', values: ['16\"', '18\"', '20\"', '22\"'] },
+                { label: 'Long (24–30")', values: ['24\"', '26\"', '28\"', '30\"'] },
+                { label: 'All (10–30")', values: ['10\"', '12\"', '14\"', '16\"', '18\"', '20\"', '22\"', '24\"', '26\"', '28\"', '30\"'] },
+            ],
+        },
+        {
+            key: 'wig_size',
+            label: 'Wig cap size',
+            type: 'values',
+            defaultValues: ['Small', 'Medium', 'Large', 'Extra Large'],
+            generatesVariants: false,
+            icon: 'ri-user-smile-line',
+            accent: 'emerald',
+        },
+        {
+            key: 'density',
+            label: 'Density',
+            type: 'values',
+            defaultValues: ['150%', '180%', '200%', '250%', '300%', '350%'],
+            generatesVariants: false,
+            icon: 'ri-stack-line',
+            accent: 'indigo',
+            presets: [
+                { label: 'Light (150–200%)', values: ['150%', '180%', '200%'] },
+                { label: 'Standard (250–300%)', values: ['250%', '300%'] },
+                { label: 'Full range', values: ['150%', '180%', '200%', '250%', '300%', '350%'] },
+            ],
+        },
     ];
+
+    const ACCENT_STYLES: Record<OptionGroupDef['accent'], { iconBg: string; iconText: string; border: string }> = {
+        rose: { iconBg: 'bg-rose-50', iconText: 'text-rose-600', border: 'border-rose-200' },
+        amber: { iconBg: 'bg-amber-50', iconText: 'text-amber-600', border: 'border-amber-200' },
+        sky: { iconBg: 'bg-sky-50', iconText: 'text-sky-600', border: 'border-sky-200' },
+        violet: { iconBg: 'bg-violet-50', iconText: 'text-violet-600', border: 'border-violet-200' },
+        emerald: { iconBg: 'bg-emerald-50', iconText: 'text-emerald-600', border: 'border-emerald-200' },
+        indigo: { iconBg: 'bg-indigo-50', iconText: 'text-indigo-600', border: 'border-indigo-200' },
+    };
 
     type OptionGroupState = {
         enabled: boolean;
@@ -275,18 +359,26 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
               }))
             : [];
 
-    const emptyVariantRow = () => ({
+    type VariantRow = {
+        price: string;
+        comparePrice: string;
+        salePrice: string;
+        stock: string;
+        sku: string;
+        imageUrl: string;
+    };
+
+    const emptyVariantRow = (): VariantRow => ({
         price: price?.toString() || '',
         comparePrice: comparePrice?.toString() || '',
         salePrice: salePrice?.toString() || '',
         stock: '0',
         sku: '',
+        imageUrl: '',
     });
 
-    const [variantData, setVariantData] = useState<
-        Record<string, { price: string; comparePrice: string; salePrice: string; stock: string; sku: string }>
-    >(() => {
-        const data: Record<string, { price: string; comparePrice: string; salePrice: string; stock: string; sku: string }> = {};
+    const [variantData, setVariantData] = useState<Record<string, VariantRow>>(() => {
+        const data: Record<string, VariantRow> = {};
         const byLegacyKey = (v: any) => {
             const c = v.option2 || '';
             const len = v.option1 || '';
@@ -310,10 +402,147 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                     v.sale_price != null && v.sale_price !== '' ? String(v.sale_price) : '',
                 stock: (v.stock ?? v.quantity ?? 0).toString(),
                 sku: v.sku || '',
+                imageUrl: v.image_url || '',
             };
         });
         return data;
     });
+
+    // Apply a preset value list to an option group (replaces current values).
+    const applyPreset = (key: string, values: string[]) => {
+        setOptionGroupStates((prev) => ({
+            ...prev,
+            [key]: { ...prev[key], enabled: true, values: [...values] },
+        }));
+    };
+
+    // Pricing curve state (only relevant when Length is variant-driving)
+    const [curveBase, setCurveBase] = useState('');
+    const [curveStep, setCurveStep] = useState('');
+
+    const applyLengthPricingCurve = () => {
+        const baseNum = parseFloat(curveBase);
+        const stepNum = parseFloat(curveStep);
+        if (!Number.isFinite(baseNum) || baseNum <= 0) {
+            alert('Enter a valid base price for the shortest length.');
+            return;
+        }
+        if (!Number.isFinite(stepNum)) {
+            alert('Enter a valid step amount (use 0 for flat pricing).');
+            return;
+        }
+        const lengthIdx = activeGroups.findIndex((g) => g.key === 'length');
+        if (lengthIdx < 0) {
+            alert('Enable the Length option as variant-driving first.');
+            return;
+        }
+        // Sort length values by numeric component so prices increase with size
+        const lengthValues = [...activeGroups[lengthIdx].values];
+        const sortLengths = lengthValues
+            .map((v) => ({ v, n: parseFloat(v.replace(/[^\d.]/g, '')) || 0 }))
+            .sort((a, b) => a.n - b.n)
+            .map((x) => x.v);
+        const priceByLength: Record<string, number> = {};
+        sortLengths.forEach((v, i) => {
+            priceByLength[v] = +(baseNum + stepNum * i).toFixed(2);
+        });
+        setVariantData((prev) => {
+            const updated = { ...prev };
+            variantCombinations.forEach((combo) => {
+                const lengthVal = combo.values[lengthIdx];
+                const newPrice = priceByLength[lengthVal];
+                if (newPrice != null) {
+                    updated[combo.key] = {
+                        ...(updated[combo.key] || emptyVariantRow()),
+                        price: String(newPrice),
+                    };
+                }
+            });
+            return updated;
+        });
+    };
+
+    const slugifyValue = (s: string) =>
+        s
+            .toString()
+            .toUpperCase()
+            .replace(/[^A-Z0-9]+/g, '')
+            .slice(0, 8) || 'X';
+
+    const autoFillVariantSkus = () => {
+        let parent = sku?.trim();
+        if (!parent) {
+            parent = generateSku();
+            setSku(parent);
+        }
+        const cleanParent = parent.replace(/-+$/, '');
+        setVariantData((prev) => {
+            const updated = { ...prev };
+            variantCombinations.forEach((combo) => {
+                const suffix = combo.values.map(slugifyValue).join('-');
+                updated[combo.key] = {
+                    ...(updated[combo.key] || emptyVariantRow()),
+                    sku: `${cleanParent}-${suffix}`,
+                };
+            });
+            return updated;
+        });
+    };
+
+    const setVariantImage = (key: string, url: string) => {
+        setVariantData((prev) => ({
+            ...prev,
+            [key]: { ...(prev[key] || emptyVariantRow()), imageUrl: url },
+        }));
+    };
+
+    // Bulk-by-axis: apply a value to every variant where `groupKey` equals `axisValue`
+    const bulkSetByAxis = (
+        groupIdx: number,
+        axisValue: string,
+        field: 'price' | 'stock' | 'comparePrice' | 'salePrice',
+        newValue: string,
+    ) => {
+        if (groupIdx < 0) return;
+        setVariantData((prev) => {
+            const updated = { ...prev };
+            variantCombinations.forEach((combo) => {
+                if (combo.values[groupIdx] === axisValue) {
+                    updated[combo.key] = {
+                        ...(updated[combo.key] || emptyVariantRow()),
+                        [field]: newValue,
+                    };
+                }
+            });
+            return updated;
+        });
+    };
+
+    const FIELD_LABELS: Record<'price' | 'comparePrice' | 'salePrice' | 'stock', string> = {
+        price: 'regular price (GH₵)',
+        comparePrice: 'compare-at price (GH₵)',
+        salePrice: 'sale price (GH₵)',
+        stock: 'stock qty',
+    };
+
+    const promptBulkByAxis = (groupIdx: number, groupLabel: string, axisValue: string) => {
+        const fieldChoice = prompt(
+            `Apply to every variant where ${groupLabel} = "${axisValue}":\n\nWhich field?\n  1) Regular price\n  2) Compare-at (was) price\n  3) Sale price\n  4) Stock\n\nEnter 1, 2, 3 or 4:`,
+            '1',
+        );
+        if (!fieldChoice) return;
+        const map: Record<string, 'price' | 'comparePrice' | 'salePrice' | 'stock'> = {
+            '1': 'price',
+            '2': 'comparePrice',
+            '3': 'salePrice',
+            '4': 'stock',
+        };
+        const field = map[fieldChoice.trim()];
+        if (!field) return;
+        const val = prompt(`New ${FIELD_LABELS[field]} for ${groupLabel} = "${axisValue}":`, '');
+        if (val == null) return;
+        bulkSetByAxis(groupIdx, axisValue, field, val);
+    };
 
     const variants = variantCombinations.map((combo) => {
         const d = variantData[combo.key] || emptyVariantRow();
@@ -334,6 +563,7 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
             comparePrice: d.comparePrice || '',
             salePrice: d.salePrice || '',
             stock: d.stock || '0',
+            imageUrl: d.imageUrl || '',
         };
     });
 
@@ -366,6 +596,7 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
     // Images
     const [images, setImages] = useState<any[]>(initialData?.product_images || []);
     const [uploading, setUploading] = useState(false);
+    const [imagePickerOpenFor, setImagePickerOpenFor] = useState<string | null>(null);
 
     // SEO
     const [seoTitle, setSeoTitle] = useState(initialData?.seo_title || '');
@@ -409,6 +640,9 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
         }
     }, [isEditMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    const VIDEO_MIME_TYPES = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo'];
+    const isVideoFile = (url: string) => /\.(mp4|webm|ogg|mov|avi|m4v)$/i.test(url);
+
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         try {
             if (!e.target.files || e.target.files.length === 0) return;
@@ -421,7 +655,7 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
 
             const { error: uploadError } = await supabase.storage
                 .from('products')
-                .upload(filePath, file);
+                .upload(filePath, file, { contentType: file.type || undefined });
 
             if (uploadError) throw uploadError;
 
@@ -429,10 +663,11 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                 .from('products')
                 .getPublicUrl(filePath);
 
-            setImages([...images, { url: publicUrl, position: images.length }]);
+            const isVid = VIDEO_MIME_TYPES.includes(file.type) || isVideoFile(file.name);
+            setImages([...images, { url: publicUrl, position: images.length, is_video: isVid }]);
 
         } catch (error: any) {
-            alert('Error uploading image: ' + error.message);
+            alert('Error uploading file: ' + error.message);
         } finally {
             setUploading(false);
         }
@@ -577,6 +812,7 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                             option1,
                             option2,
                             option3,
+                            image_url: v.imageUrl || null,
                             metadata: {
                                 ...(colorHex ? { color_hex: colorHex } : {}),
                                 combo_key: v.key,
@@ -951,12 +1187,13 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                                     const state = optionGroupStates[def.key];
                                     if (!state) return null;
                                     const isColor = def.type === 'color';
+                                    const accent = ACCENT_STYLES[def.accent];
                                     return (
                                         <div
                                             key={def.key}
                                             className={`rounded-xl border-2 transition-all ${
                                                 state.enabled
-                                                    ? ' border-slate-700 bg-white shadow-sm'
+                                                    ? `${accent.border} bg-white shadow-sm`
                                                     : 'border-gray-200 bg-gray-50 opacity-80'
                                             }`}
                                         >
@@ -968,26 +1205,33 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                                                         onChange={() => toggleOptionGroup(def.key)}
                                                         className="w-5 h-5 text-slate-700 border-gray-300 rounded cursor-pointer flex-shrink-0"
                                                     />
-                                                    <span className="font-bold text-gray-900">{def.label}</span>
-                                                    {state.enabled && state.generatesVariants && (
-                                                        <span className="text-xs font-medium bg-violet-100 text-violet-800 px-2 py-0.5 rounded-full whitespace-nowrap">
-                                                            Creates variants
-                                                        </span>
-                                                    )}
+                                                    <span
+                                                        className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${accent.iconBg} ${accent.iconText}`}
+                                                    >
+                                                        <i className={`${def.icon} text-lg`}></i>
+                                                    </span>
+                                                    <span className="font-bold text-gray-900 truncate">{def.label}</span>
                                                 </label>
                                                 {state.enabled && (
                                                     <div className="flex items-center gap-2 flex-shrink-0">
                                                         <button
                                                             type="button"
                                                             onClick={() => toggleGeneratesVariants(def.key)}
-                                                            className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                                                            className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
                                                                 state.generatesVariants
-                                                                    ? 'bg-violet-100 border-violet-300 text-violet-800'
+                                                                    ? 'bg-violet-50 border-violet-300 text-violet-700'
                                                                     : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400'
                                                             }`}
-                                                            title="Use separate price/stock per combination for this option"
+                                                            title="Selection only = shown on the product page but same price/stock. Variant = drives separate price & stock per combination."
                                                         >
-                                                            {state.generatesVariants ? 'Variants: on' : 'Variants: off (info only)'}
+                                                            {state.generatesVariants ? (
+                                                                <>
+                                                                    <i className="ri-flashlight-fill text-violet-600"></i>
+                                                                    Variant
+                                                                </>
+                                                            ) : (
+                                                                'Selection only'
+                                                            )}
                                                         </button>
                                                         {!isColor && (
                                                             <button
@@ -1004,6 +1248,22 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                                             </div>
                                             {def.help && (
                                                 <p className="px-4 pt-3 text-xs text-gray-500 leading-relaxed">{def.help}</p>
+                                            )}
+                                            {state.enabled && def.presets && def.presets.length > 0 && (
+                                                <div className="px-4 pt-3 flex flex-wrap gap-1.5">
+                                                    {def.presets.map((preset) => (
+                                                        <button
+                                                            key={preset.label}
+                                                            type="button"
+                                                            onClick={() => applyPreset(def.key, preset.values)}
+                                                            className="text-xs px-2 py-1 rounded-md bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+                                                            title="Replace current values with this preset"
+                                                        >
+                                                            <i className="ri-magic-line mr-1 text-slate-400"></i>
+                                                            {preset.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
                                             )}
                                             {state.enabled && (
                                                 <div className="p-4 space-y-3">
@@ -1158,13 +1418,21 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                                                             )
                                                         )
                                                     }
-                                                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                                                    className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
                                                         g.generatesVariants
-                                                            ? 'bg-violet-100 border-violet-300 text-violet-800'
-                                                            : 'bg-white border-gray-200 text-gray-500'
+                                                            ? 'bg-violet-50 border-violet-300 text-violet-700'
+                                                            : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400'
                                                     }`}
+                                                    title="Selection only = shown on the product page but same price/stock. Variant = drives separate price & stock per combination."
                                                 >
-                                                    {g.generatesVariants ? 'Variants: on' : 'Variants: off'}
+                                                    {g.generatesVariants ? (
+                                                        <>
+                                                            <i className="ri-flashlight-fill text-violet-600"></i>
+                                                            Variant
+                                                        </>
+                                                    ) : (
+                                                        'Selection only'
+                                                    )}
                                                 </button>
                                                 <button
                                                     type="button"
@@ -1227,7 +1495,61 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                             </div>
 
                             {variantCombinations.length > 0 && (
-                                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                                <div className="space-y-4">
+                                    {activeGroups.some((g) => g.key === 'length') && (
+                                        <div className="rounded-xl border-2 border-violet-100 bg-violet-50/40 p-4">
+                                            <div className="flex items-start justify-between gap-3 flex-wrap">
+                                                <div className="flex items-start gap-3">
+                                                    <span className="w-9 h-9 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center">
+                                                        <i className="ri-line-chart-line text-lg"></i>
+                                                    </span>
+                                                    <div>
+                                                        <h5 className="text-sm font-bold text-gray-900">Length pricing curve</h5>
+                                                        <p className="text-xs text-gray-600 max-w-md">
+                                                            Set the base price for the shortest length, plus the step-up per length.
+                                                            Wig Century will fill in every length row for you.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-end gap-2 flex-wrap">
+                                                    <div>
+                                                        <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+                                                            Base (GH₵)
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            value={curveBase}
+                                                            onChange={(e) => setCurveBase(e.target.value)}
+                                                            placeholder="e.g. 500"
+                                                            className="w-28 px-3 py-1.5 border border-violet-200 rounded-lg text-sm focus:ring-1 focus:ring-violet-500 focus:border-violet-500 bg-white"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+                                                            + per length
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            value={curveStep}
+                                                            onChange={(e) => setCurveStep(e.target.value)}
+                                                            placeholder="e.g. 50"
+                                                            className="w-28 px-3 py-1.5 border border-violet-200 rounded-lg text-sm focus:ring-1 focus:ring-violet-500 focus:border-violet-500 bg-white"
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={applyLengthPricingCurve}
+                                                        className="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1"
+                                                    >
+                                                        <i className="ri-magic-line"></i>
+                                                        Apply to all lengths
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                                     <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
                                         <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
                                             <i className="ri-grid-line text-lg text-violet-600"></i>
@@ -1235,6 +1557,15 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                                             {variantCombinations.length > 1 ? 's' : ''}
                                         </h4>
                                         <div className="flex items-center gap-2 flex-wrap">
+                                            <button
+                                                type="button"
+                                                onClick={autoFillVariantSkus}
+                                                className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors flex items-center gap-1"
+                                                title="Generate SKUs like WIG-1B-18 based on the parent SKU + values"
+                                            >
+                                                <i className="ri-barcode-line"></i>
+                                                Auto-SKU
+                                            </button>
                                             <button
                                                 type="button"
                                                 onClick={() => {
@@ -1281,79 +1612,205 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                                         <table className="w-full">
                                             <thead className="bg-gray-50 border-b border-gray-200">
                                                 <tr>
+                                                    <th className="text-left py-3 px-3 text-sm font-semibold text-gray-700 w-16">
+                                                        Image
+                                                    </th>
                                                     {activeGroups.map((g, i) => (
-                                                        <th key={i} className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                                                        <th key={i} className="text-left py-3 px-3 text-sm font-semibold text-gray-700">
                                                             {g.name}
                                                         </th>
                                                     ))}
-                                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                                                    <th className="text-left py-3 px-3 text-sm font-semibold text-gray-700">SKU</th>
+                                                    <th className="text-left py-3 px-3 text-sm font-semibold text-gray-700">
                                                         Compare (GH₵)
                                                     </th>
-                                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                                                    <th className="text-left py-3 px-3 text-sm font-semibold text-gray-700">
                                                         Regular (GH₵)
                                                     </th>
-                                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                                                    <th className="text-left py-3 px-3 text-sm font-semibold text-gray-700">
                                                         Sale (GH₵)
                                                     </th>
-                                                    <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
+                                                    <th className="text-center py-3 px-3 text-sm font-semibold text-gray-700">
                                                         Off %
                                                     </th>
-                                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Stock</th>
+                                                    <th className="text-left py-3 px-3 text-sm font-semibold text-gray-700">Stock</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {variantCombinations.map((combo) => {
+                                                {variantCombinations.map((combo, rowIdx) => {
                                                     const d = variantData[combo.key] || emptyVariantRow();
                                                     const saleNum = parseFloat(d.price) || 0;
                                                     const origNum = parseFloat(d.comparePrice) || 0;
                                                     const hasOff = origNum > 0 && saleNum > 0 && origNum > saleNum;
                                                     const offPct = hasOff ? Math.round(((origNum - saleNum) / origNum) * 100) : 0;
+                                                    const stockNum = parseInt(d.stock) || 0;
+                                                    const flipImagePicker =
+                                                        variantCombinations.length > 4 &&
+                                                        rowIdx >= variantCombinations.length - 3;
                                                     return (
                                                         <tr key={combo.key} className="border-b border-gray-100 hover:bg-gray-50">
+                                                            <td className="py-3 px-3 align-top">
+                                                                <div className="relative">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            setImagePickerOpenFor(
+                                                                                imagePickerOpenFor === combo.key ? null : combo.key,
+                                                                            )
+                                                                        }
+                                                                        className="block w-12 h-12 rounded-lg border border-gray-200 overflow-hidden hover:ring-2 hover:ring-violet-300 focus:outline-none focus:ring-2 focus:ring-violet-400 transition"
+                                                                        title={
+                                                                            images.length === 0
+                                                                                ? 'Upload images on the Images tab first'
+                                                                                : 'Pick a photo for this variant'
+                                                                        }
+                                                                    >
+                                                                        {d.imageUrl ? (
+                                                                            <img
+                                                                                src={d.imageUrl}
+                                                                                alt=""
+                                                                                className="w-full h-full object-cover"
+                                                                            />
+                                                                        ) : (
+                                                                            <div className="w-full h-full bg-gray-50 border border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
+                                                                                <i className="ri-image-add-line text-lg"></i>
+                                                                            </div>
+                                                                        )}
+                                                                    </button>
+                                                                    {imagePickerOpenFor === combo.key && (
+                                                                        <>
+                                                                            <div
+                                                                                className="fixed inset-0 z-30"
+                                                                                onClick={() => setImagePickerOpenFor(null)}
+                                                                            />
+                                                                            <div
+                                                                                className={`absolute z-40 left-0 w-72 bg-white border border-gray-200 rounded-xl shadow-xl p-3 ${
+                                                                                    flipImagePicker ? 'bottom-14' : 'top-14'
+                                                                                }`}
+                                                                            >
+                                                                                <div className="flex items-center justify-between mb-2">
+                                                                                    <span className="text-xs font-semibold text-gray-700">
+                                                                                        Choose image
+                                                                                    </span>
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => {
+                                                                                            setVariantImage(combo.key, '');
+                                                                                            setImagePickerOpenFor(null);
+                                                                                        }}
+                                                                                        className="text-xs text-gray-500 hover:text-red-600"
+                                                                                        disabled={!d.imageUrl}
+                                                                                    >
+                                                                                        <i className="ri-close-circle-line mr-0.5"></i>
+                                                                                        Clear
+                                                                                    </button>
+                                                                                </div>
+                                                                                {images.length === 0 ? (
+                                                                                    <p className="text-xs text-gray-500 p-3 text-center bg-gray-50 rounded-lg">
+                                                                                        No images uploaded yet. Add some on the
+                                                                                        <strong className="mx-1">Images</strong> tab.
+                                                                                    </p>
+                                                                                ) : (
+                                                                                    <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
+                                                                                        {images.map((img: any, idx: number) => {
+                                                                                            const isSelected = d.imageUrl === img.url;
+                                                                                            return (
+                                                                                                <button
+                                                                                                    type="button"
+                                                                                                    key={idx}
+                                                                                                    onClick={() => {
+                                                                                                        setVariantImage(combo.key, img.url);
+                                                                                                        setImagePickerOpenFor(null);
+                                                                                                    }}
+                                                                                                    className={`relative aspect-square rounded-md overflow-hidden border-2 transition ${
+                                                                                                        isSelected
+                                                                                                            ? 'border-violet-500 ring-2 ring-violet-200'
+                                                                                                            : 'border-gray-200 hover:border-violet-400'
+                                                                                                    }`}
+                                                                                                    title={`Use image ${idx + 1}`}
+                                                                                                >
+                                                                                                    <img
+                                                                                                        src={img.url}
+                                                                                                        alt=""
+                                                                                                        className="w-full h-full object-cover"
+                                                                                                    />
+                                                                                                    {isSelected && (
+                                                                                                        <span className="absolute top-0.5 right-0.5 w-4 h-4 bg-violet-600 text-white rounded-full flex items-center justify-center">
+                                                                                                            <i className="ri-check-line text-[10px]"></i>
+                                                                                                        </span>
+                                                                                                    )}
+                                                                                                </button>
+                                                                                            );
+                                                                                        })}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            </td>
                                                             {combo.values.map((cell, vi) => (
-                                                                <td key={vi} className="py-3 px-4">
-                                                                    <span className="text-sm font-semibold text-gray-900 bg-gray-100 px-2.5 py-1 rounded">
+                                                                <td key={vi} className="py-3 px-3">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            promptBulkByAxis(vi, activeGroups[vi].name, cell)
+                                                                        }
+                                                                        className="text-sm font-semibold text-gray-900 bg-gray-100 hover:bg-violet-100 hover:text-violet-800 px-2.5 py-1 rounded whitespace-nowrap transition-colors"
+                                                                        title={`Click to apply a value to every variant where ${activeGroups[vi].name} = ${cell}`}
+                                                                    >
                                                                         {cell}
-                                                                    </span>
+                                                                    </button>
                                                                 </td>
                                                             ))}
-                                                            <td className="py-3 px-4">
+                                                            <td className="py-3 px-3">
+                                                                <input
+                                                                    type="text"
+                                                                    value={d.sku}
+                                                                    onChange={(e) =>
+                                                                        updateVariantField(combo.key, 'sku', e.target.value)
+                                                                    }
+                                                                    className="w-32 px-2 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                                                                    placeholder="auto"
+                                                                />
+                                                            </td>
+                                                            <td className="py-3 px-3">
                                                                 <input
                                                                     type="number"
                                                                     value={d.comparePrice}
                                                                     onChange={(e) =>
                                                                         updateVariantField(combo.key, 'comparePrice', e.target.value)
                                                                     }
-                                                                    className="w-28 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                                                                    className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
                                                                     step="0.01"
                                                                     placeholder="—"
                                                                 />
                                                             </td>
-                                                            <td className="py-3 px-4">
+                                                            <td className="py-3 px-3">
                                                                 <input
                                                                     type="number"
                                                                     value={d.price}
                                                                     onChange={(e) =>
                                                                         updateVariantField(combo.key, 'price', e.target.value)
                                                                     }
-                                                                    className="w-28 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                                                                    className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
                                                                     step="0.01"
                                                                     placeholder={price?.toString() || '0'}
                                                                 />
                                                             </td>
-                                                            <td className="py-3 px-4">
+                                                            <td className="py-3 px-3">
                                                                 <input
                                                                     type="number"
                                                                     value={d.salePrice}
                                                                     onChange={(e) =>
                                                                         updateVariantField(combo.key, 'salePrice', e.target.value)
                                                                     }
-                                                                    className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
+                                                                    className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
                                                                     step="0.01"
                                                                     placeholder="—"
                                                                 />
                                                             </td>
-                                                            <td className="py-3 px-4 text-center">
+                                                            <td className="py-3 px-3 text-center">
                                                                 {hasOff ? (
                                                                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-700">
                                                                         −{offPct}%
@@ -1362,16 +1819,24 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                                                                     <span className="text-xs text-gray-400">—</span>
                                                                 )}
                                                             </td>
-                                                            <td className="py-3 px-4">
-                                                                <input
-                                                                    type="number"
-                                                                    value={d.stock}
-                                                                    onChange={(e) =>
-                                                                        updateVariantField(combo.key, 'stock', e.target.value)
-                                                                    }
-                                                                    className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-slate-500 focus:border-slate-500"
-                                                                    placeholder="0"
-                                                                />
+                                                            <td className="py-3 px-3">
+                                                                <div className="relative">
+                                                                    <input
+                                                                        type="number"
+                                                                        value={d.stock}
+                                                                        onChange={(e) =>
+                                                                            updateVariantField(combo.key, 'stock', e.target.value)
+                                                                        }
+                                                                        className={`w-20 px-3 py-2 border rounded-lg text-sm focus:ring-1 focus:ring-slate-500 focus:border-slate-500 ${
+                                                                            stockNum === 0
+                                                                                ? 'border-red-200 bg-red-50 text-red-700'
+                                                                                : stockNum < 3
+                                                                                ? 'border-amber-200 bg-amber-50 text-amber-800'
+                                                                                : 'border-gray-300'
+                                                                        }`}
+                                                                        placeholder="0"
+                                                                    />
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     );
@@ -1387,6 +1852,19 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                                                 {variants.reduce((sum, v) => sum + (parseInt(v.stock) || 0), 0)}
                                             </strong>
                                         </p>
+                                        <p className="text-xs text-slate-600 flex items-center">
+                                            <i className="ri-cursor-line mr-1.5"></i>
+                                            Tip: click any colour or length pill above to bulk-apply a price or stock value
+                                            to just that row of variants.
+                                        </p>
+                                        {images.length === 0 && (
+                                            <p className="text-xs text-amber-700 flex items-center">
+                                                <i className="ri-information-line mr-1.5"></i>
+                                                Upload images on the <strong className="mx-1">Images</strong> tab to attach
+                                                a specific photo to each colour / length.
+                                            </p>
+                                        )}
+                                    </div>
                                     </div>
                                 </div>
                             )}
@@ -1409,45 +1887,82 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                     {activeTab === 'images' && (
                         <div className="space-y-6">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-1">Product Images</h3>
-                                <p className="text-gray-600">Add up to 10 images. First image will be the primary image.</p>
+                                <h3 className="text-lg font-bold text-gray-900 mb-1">Product Media</h3>
+                                <p className="text-gray-600">Add up to 10 images and/or videos. The first item is the primary media shown on the product page.</p>
                             </div>
 
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {images.map((img: any, index: number) => (
-                                    <div key={index} className="relative group">
-                                        <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-200">
-                                            <img src={img.url} alt={`Product ${index + 1}`} className="w-full h-full object-cover" />
+                                {images.map((img: any, index: number) => {
+                                    const isVid = img.is_video || isVideoFile(img.url);
+                                    return (
+                                        <div key={index} className="relative group">
+                                            <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-200">
+                                                {isVid ? (
+                                                    <video
+                                                        src={img.url}
+                                                        className="w-full h-full object-cover"
+                                                        muted
+                                                        playsInline
+                                                        loop
+                                                        preload="metadata"
+                                                        onMouseEnter={(e) => {
+                                                            const v = e.currentTarget as HTMLVideoElement;
+                                                            v.play().catch(() => {});
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            const v = e.currentTarget as HTMLVideoElement;
+                                                            v.pause();
+                                                            v.currentTime = 0;
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img src={img.url} alt={`Product ${index + 1}`} className="w-full h-full object-cover" />
+                                                )}
+                                            </div>
+                                            <div className="absolute top-2 left-2 flex gap-1">
+                                                {index === 0 && (
+                                                    <span className="bg-slate-700 text-white px-2 py-1 rounded text-xs font-semibold whitespace-nowrap">
+                                                        Primary
+                                                    </span>
+                                                )}
+                                                {isVid && (
+                                                    <span className="bg-violet-600 text-white px-2 py-1 rounded text-xs font-semibold flex items-center gap-1">
+                                                        <i className="ri-video-line text-xs"></i> Video
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 rounded-xl pointer-events-none">
+                                                <a
+                                                    href={img.url}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="w-9 h-9 flex items-center justify-center bg-white text-gray-900 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer pointer-events-auto"
+                                                >
+                                                    <i className="ri-eye-line"></i>
+                                                </a>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveImage(index)}
+                                                    className="w-9 h-9 flex items-center justify-center bg-white text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer pointer-events-auto"
+                                                >
+                                                    <i className="ri-delete-bin-line"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                        {index === 0 && (
-                                            <span className="absolute top-2 left-2 bg-slate-700 text-white px-2 py-1 rounded text-xs font-semibold whitespace-nowrap">
-                                                Primary
-                                            </span>
-                                        )}
-                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2 rounded-xl">
-                                            <a href={img.url} target="_blank" rel="noreferrer" className="w-9 h-9 flex items-center justify-center bg-white text-gray-900 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-                                                <i className="ri-eye-line"></i>
-                                            </a>
-                                            <button
-                                                onClick={() => handleRemoveImage(index)}
-                                                className="w-9 h-9 flex items-center justify-center bg-white text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                                            >
-                                                <i className="ri-delete-bin-line"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
 
                                 <label className={`aspect-square border-2 border-dashed border-gray-300 rounded-xl hover:border-slate-700 hover:bg-slate-50 transition-colors flex flex-col items-center justify-center space-y-2 text-gray-600 hover:text-slate-700 cursor-pointer ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                     {uploading ? (
                                         <i className="ri-loader-4-line animate-spin text-3xl"></i>
                                     ) : (
-                                        <i className="ri-upload-2-line text-3xl"></i>
+                                        <i className="ri-add-circle-line text-3xl"></i>
                                     )}
-                                    <span className="text-sm font-semibold">{uploading ? 'Uploading...' : 'Upload Image'}</span>
+                                    <span className="text-sm font-semibold text-center px-2">{uploading ? 'Uploading...' : 'Image or Video'}</span>
                                     <input
                                         type="file"
-                                        accept="image/*"
+                                        accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo"
                                         className="hidden"
                                         onChange={handleImageUpload}
                                         disabled={uploading}
@@ -1455,10 +1970,13 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                                 </label>
                             </div>
 
-                            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-1">
                                 <p className="text-sm text-gray-700">
-                                    <strong>Image Guidelines:</strong> Use high-quality images (min 1000x1000px), white or neutral backgrounds work best.
-                                    Supported formats: JPG, PNG, WebP (max 5MB each).
+                                    <strong>Images:</strong> JPG, PNG, WebP — min 1000×1000px on neutral backgrounds works best.
+                                </p>
+                                <p className="text-sm text-gray-700">
+                                    <strong>Videos:</strong> MP4, WebM, MOV — auto-converted to AVIF/WebP isn&apos;t possible for video,
+                                    so upload a tightly trimmed clip (≤ 15 MB). Videos hover-preview here and autoplay muted on the product page.
                                 </p>
                             </div>
                         </div>

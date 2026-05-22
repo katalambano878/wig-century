@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { isVideoUrl } from './LazyImage';
 
 interface Product {
   id: string;
@@ -66,29 +67,62 @@ export default function QuickViewModal({ product, isOpen, onClose }: QuickViewMo
             <div className="grid md:grid-cols-2 gap-8">
               <div>
                 <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
-                  <Image
-                    src={images[selectedImage]}
-                    alt={product.name}
-                    fill
-                    className="object-cover object-top"
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    quality={75}
-                  />
+                  {isVideoUrl(images[selectedImage]) ? (
+                    <video
+                      key={images[selectedImage]}
+                      src={images[selectedImage]}
+                      className="absolute inset-0 w-full h-full object-cover object-top"
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      controls
+                      preload="metadata"
+                    />
+                  ) : (
+                    <Image
+                      src={images[selectedImage]}
+                      alt={product.name}
+                      fill
+                      className="object-cover object-top"
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      quality={75}
+                    />
+                  )}
                 </div>
 
                 {images.length > 1 && (
                   <div className="grid grid-cols-4 gap-2">
-                    {images.map((image, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setSelectedImage(index)}
-                        className={`relative aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 transition-colors ${
-                          selectedImage === index ? 'border-slate-700' : 'border-transparent hover:border-gray-300'
-                        }`}
-                      >
-                        <Image src={image} alt="" fill className="object-cover object-top" sizes="12vw" quality={50} loading="lazy" />
-                      </button>
-                    ))}
+                    {images.map((image, index) => {
+                      const isVid = isVideoUrl(image);
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => setSelectedImage(index)}
+                          className={`relative aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 transition-colors ${
+                            selectedImage === index ? 'border-slate-700' : 'border-transparent hover:border-gray-300'
+                          }`}
+                          aria-label={isVid ? `Video ${index + 1}` : `Image ${index + 1}`}
+                        >
+                          {isVid ? (
+                            <>
+                              <video
+                                src={image}
+                                className="absolute inset-0 w-full h-full object-cover object-top"
+                                muted
+                                playsInline
+                                preload="metadata"
+                              />
+                              <span className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                                <i className="ri-play-fill text-white text-xl drop-shadow"></i>
+                              </span>
+                            </>
+                          ) : (
+                            <Image src={image} alt="" fill className="object-cover object-top" sizes="12vw" quality={50} loading="lazy" />
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
