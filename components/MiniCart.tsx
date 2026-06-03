@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useCart } from '@/context/CartContext';
 
 interface MiniCartProps {
@@ -11,6 +12,12 @@ interface MiniCartProps {
 
 export default function MiniCart({ isOpen, onClose }: MiniCartProps) {
   const { cart, removeFromCart, updateQuantity, subtotal } = useCart();
+  const [mounted, setMounted] = useState(false);
+
+  // Portal target is only available on the client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Lock body scroll when cart is open
   useEffect(() => {
@@ -24,9 +31,11 @@ export default function MiniCart({ isOpen, onClose }: MiniCartProps) {
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  // Render via portal to document.body so the fixed overlay/drawer are
+  // positioned against the viewport, not the transformed (sticky) header.
+  return createPortal(
     <>
       <div
         className="fixed inset-0 bg-gray-900 bg-opacity-50 z-40 transition-opacity"
@@ -155,6 +164,7 @@ export default function MiniCart({ isOpen, onClose }: MiniCartProps) {
           </>
         )}
       </div>
-    </>
+    </>,
+    document.body
   );
 }

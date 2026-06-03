@@ -14,6 +14,88 @@ import {
   resolveCartLineUnitPrice,
 } from '@/lib/pricing';
 
+// Comprehensive Ghana regions → major cities / towns.
+// "Other (not listed)" lets shoppers type a town that isn't in the list.
+const OTHER_CITY = 'Other (not listed)';
+const GHANA_REGIONS_CITIES: Record<string, string[]> = {
+  'Greater Accra': [
+    'Accra', 'Tema', 'Madina', 'Ashaiman', 'Teshie', 'Nungua', 'Dansoman', 'Adenta', 'Dome',
+    'Achimota', 'Lapaz', 'Spintex', 'East Legon', 'Osu', 'Labadi', 'Sakumono', 'Prampram',
+    'Ada Foah', 'Dodowa', 'Amasaman', 'Pokuase', 'Weija', 'Gbawe', 'Kaneshie', 'Nima',
+    'Kotobabi', 'Abeka', 'Tesano', 'Cantonments', 'Airport Residential', 'Labone', 'La',
+    'Sowutuom', 'Taifa', 'Kwabenya', 'Oyibi', 'Afienya', 'Kpone', 'Tema New Town', 'Mamprobi',
+    'Bortianor', 'Kasoa Toll Booth', 'Santa Maria', 'Haatso', 'Ogbojo', 'Ashaley Botwe',
+  ],
+  'Ashanti': [
+    'Kumasi', 'Obuasi', 'Ejisu', 'Konongo', 'Mampong', 'Bekwai', 'Offinso', 'Tepa', 'Agona',
+    'Effiduase', 'Juaso', 'Kuntanase', 'Nkawie', 'Bantama', 'Asokwa', 'Suame', 'Old Tafo',
+    'Asokore Mampong', 'Ejura', 'Adum', 'Atonsu', 'Tanoso', 'Abuakwa', 'Kwadaso', 'Santasi',
+    'Ahodwo', 'Tafo', 'Manso Nkwanta', 'New Edubiase', 'Fomena', 'Jacobu', 'Kodie',
+  ],
+  'Western': [
+    'Sekondi-Takoradi', 'Takoradi', 'Sekondi', 'Tarkwa', 'Axim', 'Prestea', 'Shama',
+    'Agona Nkwanta', 'Bogoso', 'Half Assini', 'Elubo', 'Daboase', 'Mpohor', 'Nsuaem',
+    'Wassa Akropong', 'Esiama', 'Apowa', 'Inchaban', 'Anyinase', 'Bonsaso',
+  ],
+  'Central': [
+    'Cape Coast', 'Kasoa', 'Winneba', 'Agona Swedru', 'Mankessim', 'Saltpond', 'Elmina',
+    'Dunkwa-on-Offin', 'Assin Foso', 'Twifo Praso', 'Apam', 'Ajumako', 'Breman Asikuma',
+    'Anomabo', 'Komenda', 'Abura Dunkwa', 'Nyakrom', 'Bawjiase', 'Gomoa Fetteh', 'Moree',
+    'Assin Bereku', 'Diaso',
+  ],
+  'Eastern': [
+    'Koforidua', 'Nkawkaw', 'Suhum', 'Akosombo', 'Begoro', 'Mpraeso', 'Akim Oda', 'Kibi',
+    'Nsawam', 'Aburi', 'Akropong', 'Akuapem Mampong', 'Somanya', 'Kpong', 'Asamankese',
+    'New Tafo', 'Kade', 'Akwatia', 'Donkorkrom', 'Anyinam', 'Osino', 'Kwabeng', 'Adukrom',
+    'Mamfe', 'Ayirebi', 'Kyebi',
+  ],
+  'Volta': [
+    'Ho', 'Hohoe', 'Keta', 'Aflao', 'Kpando', 'Anloga', 'Sogakope', 'Akatsi', 'Denu',
+    'Dzodze', 'Kpeve', 'Adidome', 'Have', 'Vakpo', 'Peki', 'Abor', 'Kpetoe', 'Dabala',
+    'Ave Dakpa', 'Adaklu', 'Tsito', 'Hodzo',
+  ],
+  'Northern': [
+    'Tamale', 'Yendi', 'Savelugu', 'Tolon', 'Bimbilla', 'Gushegu', 'Karaga', 'Kumbungu',
+    'Saboba', 'Zabzugu', 'Wulensi', 'Sang', 'Tatale', 'Nanton', 'Sagnarigu', 'Kpandai',
+  ],
+  'Upper East': [
+    'Bolgatanga', 'Bawku', 'Navrongo', 'Zebilla', 'Paga', 'Sandema', 'Bongo', 'Garu',
+    'Tongo', 'Pusiga', 'Zuarungu', 'Chiana', 'Bawku West', 'Nangodi',
+  ],
+  'Upper West': [
+    'Wa', 'Tumu', 'Lawra', 'Jirapa', 'Nadowli', 'Nandom', 'Wechiau', 'Funsi', 'Hamile',
+    'Gwollu', 'Kaleo', 'Han', 'Issa', 'Lambussie',
+  ],
+  'Bono': [
+    'Sunyani', 'Berekum', 'Dormaa Ahenkro', 'Wenchi', 'Sampa', 'Drobo', 'Nsoatre', 'Odumase',
+    'Chiraa', 'Fiapre', 'Kwatire', 'Nsawkaw', 'Dormaa Akwamu', 'Seikwa', 'Banda Ahenkro',
+  ],
+  'Bono East': [
+    'Techiman', 'Kintampo', 'Nkoranza', 'Atebubu', 'Yeji', 'Prang', 'Kwame Danso', 'Jema',
+    'Tuobodom', 'Busunya', 'Amantin', 'Kajaji', 'Sabule',
+  ],
+  'Ahafo': [
+    'Goaso', 'Bechem', 'Duayaw Nkwanta', 'Hwidiem', 'Kukuom', 'Mim', 'Acherensua', 'Kenyasi',
+    'Ntotroso', 'Sankore', 'Yamfo', 'Tepa Junction',
+  ],
+  'North East': [
+    'Nalerigu', 'Walewale', 'Gambaga', 'Bunkpurugu', 'Chereponi', 'Nakpanduri', 'Langbinsi',
+    'Yagaba', 'Wungu',
+  ],
+  'Savannah': [
+    'Damongo', 'Bole', 'Salaga', 'Sawla', 'Daboya', 'Buipe', 'Larabanga', 'Tuna', 'Yapei',
+    'Kpalbe', 'Busunu',
+  ],
+  'Oti': [
+    'Dambai', 'Jasikan', 'Kadjebi', 'Nkwanta', 'Kete Krachi', 'Worawora', 'Kpassa',
+    'Brewaniase', 'Chinderi', 'Ahamansu', 'Bowiri',
+  ],
+  'Western North': [
+    'Sefwi Wiawso', 'Bibiani', 'Juaboso', 'Enchi', 'Akontombra', 'Bodi', 'Sefwi Bekwai',
+    'Dadieso', 'Essam', 'Sefwi Asawinso', 'Awaso',
+  ],
+};
+
 export default function CheckoutPage() {
   usePageTitle('Checkout');
   const router = useRouter();
@@ -37,26 +119,16 @@ export default function CheckoutPage() {
     region: ''
   });
 
-  // Ghana Regions for dropdown
-  const ghanaRegions = [
-    'Greater Accra',
-    'Ashanti',
-    'Western',
-    'Central',
-    'Eastern',
-    'Northern',
-    'Volta',
-    'Upper East',
-    'Upper West',
-    'Brong-Ahafo',
-    'Ahafo',
-    'Bono',
-    'Bono East',
-    'North East',
-    'Savannah',
-    'Oti',
-    'Western North'
-  ];
+  // Ghana Regions for dropdown (derived from the comprehensive region → cities map)
+  const ghanaRegions = Object.keys(GHANA_REGIONS_CITIES);
+  const citiesForRegion = shippingData.region
+    ? GHANA_REGIONS_CITIES[shippingData.region] || []
+    : [];
+  // Free-text fallback when the shopper's town isn't in the dropdown
+  const [customCity, setCustomCity] = useState('');
+  const cityIsOther = shippingData.city === OTHER_CITY;
+  const resolvedCity = cityIsOther ? customCity.trim() : shippingData.city;
+  const shippingAddressForOrder = { ...shippingData, city: resolvedCity };
 
   const [deliveryMethod, setDeliveryMethod] = useState('pickup');
   const [paymentMethod, setPaymentMethod] = useState('moolre');
@@ -105,8 +177,11 @@ export default function CheckoutPage() {
     else if (!/\S+@\S+\.\S+/.test(shippingData.email)) newErrors.email = 'Invalid email';
     if (!shippingData.phone) newErrors.phone = 'Phone is required';
     if (!shippingData.address) newErrors.address = 'Address is required';
-    if (!shippingData.city) newErrors.city = 'City is required';
     if (!shippingData.region) newErrors.region = 'Region is required';
+    if (!shippingData.city) newErrors.city = 'City / town is required';
+    else if (cityIsOther && !customCity.trim()) {
+      newErrors.city = 'Please enter your city / town';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -242,8 +317,8 @@ export default function CheckoutPage() {
             total: checkoutTotal,
             shipping_method: deliveryMethod,
             payment_method: paymentMethod,
-            shipping_address: shippingData,
-            billing_address: shippingData,
+            shipping_address: shippingAddressForOrder,
+            billing_address: shippingAddressForOrder,
             metadata: {
               guest_checkout: !user,
               first_name: shippingData.firstName,
@@ -279,7 +354,7 @@ export default function CheckoutPage() {
         p_first_name: shippingData.firstName,
         p_last_name: shippingData.lastName,
         p_user_id: user?.id || null,
-        p_address: shippingData
+        p_address: shippingAddressForOrder,
       });
 
       // 4. Handle Payment Redirects or Completion
@@ -535,25 +610,15 @@ export default function CheckoutPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-semibold text-gray-900 mb-2">
-                          City *
-                        </label>
-                        <input
-                          type="text"
-                          value={shippingData.city}
-                          onChange={(e) => setShippingData({ ...shippingData, city: e.target.value })}
-                          className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 ${errors.city ? 'border-red-500' : 'border-gray-300'
-                            }`}
-                          placeholder="Accra"
-                        />
-                        {errors.city && <p className="text-sm text-red-600 mt-1">{errors.city}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">
                           Region *
                         </label>
                         <select
                           value={shippingData.region}
-                          onChange={(e) => setShippingData({ ...shippingData, region: e.target.value })}
+                          onChange={(e) => {
+                            // Reset city whenever the region changes
+                            setCustomCity('');
+                            setShippingData({ ...shippingData, region: e.target.value, city: '' });
+                          }}
                           className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white ${errors.region ? 'border-red-500' : 'border-gray-300'
                             }`}
                         >
@@ -563,6 +628,40 @@ export default function CheckoutPage() {
                           ))}
                         </select>
                         {errors.region && <p className="text-sm text-red-600 mt-1">{errors.region}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-2">
+                          City / Town *
+                        </label>
+                        <select
+                          value={shippingData.city}
+                          onChange={(e) => {
+                            setCustomCity('');
+                            setShippingData({ ...shippingData, city: e.target.value });
+                          }}
+                          disabled={!shippingData.region}
+                          className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed ${errors.city ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                        >
+                          <option value="">
+                            {shippingData.region ? 'Select City / Town' : 'Select a region first'}
+                          </option>
+                          {citiesForRegion.map((city) => (
+                            <option key={city} value={city}>{city}</option>
+                          ))}
+                          {shippingData.region && <option value={OTHER_CITY}>{OTHER_CITY}</option>}
+                        </select>
+                        {cityIsOther && (
+                          <input
+                            type="text"
+                            value={customCity}
+                            onChange={(e) => setCustomCity(e.target.value)}
+                            className={`w-full mt-2 px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 ${errors.city ? 'border-red-500' : 'border-gray-300'
+                              }`}
+                            placeholder="Enter your city / town"
+                          />
+                        )}
+                        {errors.city && <p className="text-sm text-red-600 mt-1">{errors.city}</p>}
                       </div>
                     </div>
 
