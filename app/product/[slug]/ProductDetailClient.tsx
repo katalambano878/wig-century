@@ -127,11 +127,21 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
           setQuantity(transformedProduct.moq);
         }
 
-        // If variants exist, do NOT pre-select — force user to choose
-        // Reset variant and color selection
-        setSelectedVariant(null);
-        setSelectedSize('');
-        setSelectedColor('');
+        // If exactly one variant is in stock, auto-select it so the shopper
+        // doesn't have to pick the only available option. Otherwise force a choice.
+        const inStockVariants = rawVariants.filter(
+          (v: any) => (v.stock ?? v.quantity ?? 0) > 0
+        );
+        if (inStockVariants.length === 1) {
+          const onlyVariant = inStockVariants[0];
+          setSelectedVariant(onlyVariant);
+          setSelectedSize(onlyVariant.name || '');
+          setSelectedColor(onlyVariant.color || '');
+        } else {
+          setSelectedVariant(null);
+          setSelectedSize('');
+          setSelectedColor('');
+        }
 
         // Fetch related products (cached for 5 minutes)
         if (productData.category_id) {
@@ -296,7 +306,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
 
   const trustItems = [
     { icon: 'ri-store-2-line', title: 'Store Pickup', sub: 'Available in Accra' },
-    { icon: 'ri-arrow-left-right-line', title: 'Easy Returns', sub: '14-day exchange window' },
+    { icon: 'ri-arrow-left-right-line', title: 'Easy Returns', sub: '24-hour exchange window' },
     { icon: 'ri-shield-check-line', title: 'Secure Checkout', sub: 'Encrypted MoMo & cards' },
     { icon: 'ri-truck-line', title: 'Fast Delivery', sub: 'Nationwide shipping' },
   ];
@@ -332,8 +342,8 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
             <div className="grid lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-16">
 
               {/* ── GALLERY ───────────────────────────────── */}
-              <div>
-                <div className="relative aspect-square rounded-3xl overflow-hidden bg-slate-100 group">
+              <div className="lg:h-full lg:flex lg:flex-col">
+                <div className="relative aspect-square lg:aspect-auto lg:flex-1 lg:min-h-0 rounded-3xl overflow-hidden bg-slate-100 group">
                   {isVideoUrl(product.images[selectedImage]) ? (
                     <video
                       key={product.images[selectedImage]}
