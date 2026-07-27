@@ -593,9 +593,11 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
         });
     };
 
-    // Images
+    // Images / videos
     const [images, setImages] = useState<any[]>(initialData?.product_images || []);
     const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [uploadStatus, setUploadStatus] = useState('');
     const [imagePickerOpenFor, setImagePickerOpenFor] = useState<string | null>(null);
 
     // SEO
@@ -640,36 +642,163 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
         }
     }, [isEditMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const VIDEO_MIME_TYPES = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo'];
-    const isVideoFile = (url: string) => /\.(mp4|webm|ogg|mov|avi|m4v)$/i.test(url);
+    const MAX_MEDIA = 10;
+    const MAX_MEDIA_BYTES = 50 * 1024 * 1024;
+    const VIDEO_MIME_TYPES = [
+        'video/mp4',
+        'video/webm',
+        'video/ogg',
+        'video/quicktime',
+        'video/x-msvideo',
+        'video/x-m4v',
+        'video/mpeg',
+    ];
+    const isVideoFile = (urlOrName: string) =>
+        /\.(mp4|webm|ogg|mov|avi|m4v|mpeg|mpg)$/i.test(urlOrName);
+
+    const guessContentType = (file: File): string => {
+        if (file.type && file.type !== 'application/octet-stream') return file.type;
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+        const map: Record<string, string> = {
+            mp4: 'video/mp4',
+            webm: 'video/webm',
+            ogg: 'video/ogg',
+            mov: 'video/quicktime',
+            avi: 'video/x-msvideo',
+            m4v: 'video/x-m4v',
+            mpeg: 'video/mpeg',
+            mpg: 'video/mpeg',
+            jpg: 'image/jpeg',
+            jpeg: 'image/jpeg',
+            png: 'image/png',
+            webp: 'image/webp',
+            gif: 'image/gif',
+        };
+        return map[ext] || 'application/octet-stream';
+    };
+
+    const uploadFileWithProgress = (file: File, signedUrl: string, contentType: string) =>
+        new Promise<void>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('PUT', signedUrl);
+            xhr.setRequestHeader('Content-Type', contentType);
+            xhr.upload.onprogress = (evt) => {
+                if (!evt.lengthComputable) return;
+                const pct = Math.round((evt.loaded / evt.total) * 100);
+                setUploadProgress(pct);
+            };
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) resolve();
+                else reject(new Error(`Upload failed (${xhr.status}): ${xhr.responseText?.slice(0, 180) || 'unknown error'}`));
+            };
+            xhr.onerror = () => reject(new Error('Network error while uploading. Check your connection and try again.'));
+            xhr.onabort = () => reject(new Error('Upload cancelled.'));
+            xhr.send(file);
+        });
+
+    const uploadOneMediaFile = async (file: File) => {
+        if (file.size > MAX_MEDIA_BYTES) {
+            throw new Error(
+                `"${file.name}" is ${(file.size / (1024 * 1024)).toFixed(1)} MB. Max is 50 MB — compress to a short 720p MP4 and retry.`
+            );
+        }
+
+        const contentType = guessContentType(file);
+        const looksVideo = VIDEO_MIME_TYPES.includes(contentType) || isVideoFile(file.name);
+        const looksImage = contentType.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(file.name);
+        if (!looksVideo && !looksImage) {
+            throw new Error(`"${file.name}" is not a supported image or video.`);
+        }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+            throw new Error('Your admin session expired. Please log in again and retry the upload.');
+        }
+
+        const initRes = await fetch('/api/admin/media/upload', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+                filename: file.name,
+                contentType,
+                size: file.size,
+            }),
+        });
+        const initJson = await initRes.json();
+        if (!initRes.ok || !initJson.success || !initJson.data?.signedUrl) {
+            throw new Error(initJson.error || 'Could not start upload');
+        }
+
+        const { signedUrl, publicUrl, isVideo, token, path } = initJson.data;
+
+        // Prefer XHR PUT against the signed URL so we can show real upload progress
+        // on large videos. Fall back to the SDK helper if the PUT fails.
+        try {
+            await uploadFileWithProgress(file, signedUrl, contentType);
+        } catch (primaryErr: any) {
+            if (token && path) {
+                setUploadProgress(10);
+                const { error: putError } = await supabase.storage
+                    .from('products')
+                    .uploadToSignedUrl(path, token, file, { contentType, upsert: false });
+                if (putError) throw putError;
+                setUploadProgress(100);
+            } else {
+                throw primaryErr;
+            }
+        }
+
+        return {
+            url: publicUrl as string,
+            is_video: Boolean(isVideo || looksVideo),
+        };
+    };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const input = e.target;
+        const fileList = input.files;
+        if (!fileList || fileList.length === 0) return;
+
+        const remaining = MAX_MEDIA - images.length;
+        if (remaining <= 0) {
+            alert(`You can add up to ${MAX_MEDIA} media items per product.`);
+            input.value = '';
+            return;
+        }
+
+        const files = Array.from(fileList).slice(0, remaining);
+        setUploading(true);
+        setUploadProgress(0);
+        setUploadStatus('');
+
         try {
-            if (!e.target.files || e.target.files.length === 0) return;
-
-            setUploading(true);
-            const file = e.target.files[0];
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Math.random()}.${fileExt}`;
-            const filePath = `${fileName}`;
-
-            const { error: uploadError } = await supabase.storage
-                .from('products')
-                .upload(filePath, file, { contentType: file.type || undefined });
-
-            if (uploadError) throw uploadError;
-
-            const { data: { publicUrl } } = supabase.storage
-                .from('products')
-                .getPublicUrl(filePath);
-
-            const isVid = VIDEO_MIME_TYPES.includes(file.type) || isVideoFile(file.name);
-            setImages([...images, { url: publicUrl, position: images.length, is_video: isVid }]);
-
+            const added: { url: string; position: number; is_video: boolean }[] = [];
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                setUploadStatus(`Uploading ${i + 1}/${files.length}: ${file.name}`);
+                setUploadProgress(0);
+                const result = await uploadOneMediaFile(file);
+                added.push({
+                    url: result.url,
+                    position: images.length + added.length,
+                    is_video: result.is_video,
+                });
+            }
+            setImages((prev) => [...prev, ...added]);
+            setUploadStatus(added.length === 1 ? 'Uploaded' : `Uploaded ${added.length} files`);
         } catch (error: any) {
-            alert('Error uploading file: ' + error.message);
+            console.error('Media upload failed:', error);
+            alert(error?.message || 'Error uploading file');
+            setUploadStatus('');
         } finally {
             setUploading(false);
+            setUploadProgress(0);
+            input.value = '';
+            // Clear status after a beat so the UI returns to idle
+            setTimeout(() => setUploadStatus(''), 1800);
         }
     };
 
@@ -1953,31 +2082,60 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                                     );
                                 })}
 
-                                <label className={`aspect-square border-2 border-dashed border-gray-300 rounded-xl hover:border-slate-700 hover:bg-slate-50 transition-colors flex flex-col items-center justify-center space-y-2 text-gray-600 hover:text-slate-700 cursor-pointer ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                    {uploading ? (
-                                        <i className="ri-loader-4-line animate-spin text-3xl"></i>
-                                    ) : (
-                                        <i className="ri-add-circle-line text-3xl"></i>
-                                    )}
-                                    <span className="text-sm font-semibold text-center px-2">{uploading ? 'Uploading...' : 'Image or Video'}</span>
-                                    <input
-                                        type="file"
-                                        accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo"
-                                        className="hidden"
-                                        onChange={handleImageUpload}
-                                        disabled={uploading}
-                                    />
-                                </label>
+                                {images.length < MAX_MEDIA && (
+                                    <label
+                                        className={`aspect-square border-2 border-dashed border-gray-300 rounded-xl hover:border-slate-700 hover:bg-slate-50 transition-colors flex flex-col items-center justify-center space-y-2 text-gray-600 hover:text-slate-700 cursor-pointer px-3 ${
+                                            uploading ? 'opacity-70 cursor-wait' : ''
+                                        }`}
+                                    >
+                                        {uploading ? (
+                                            <i className="ri-loader-4-line animate-spin text-3xl"></i>
+                                        ) : (
+                                            <i className="ri-add-circle-line text-3xl"></i>
+                                        )}
+                                        <span className="text-sm font-semibold text-center">
+                                            {uploading ? 'Uploading…' : 'Image or Video'}
+                                        </span>
+                                        {uploading && (
+                                            <div className="w-full max-w-[9rem]">
+                                                <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-violet-600 transition-all duration-200"
+                                                        style={{ width: `${Math.max(uploadProgress, 4)}%` }}
+                                                    />
+                                                </div>
+                                                <p className="text-[10px] text-gray-500 mt-1 text-center line-clamp-2">
+                                                    {uploadStatus || `${uploadProgress}%`}
+                                                </p>
+                                            </div>
+                                        )}
+                                        <input
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo,video/x-m4v,.mp4,.webm,.mov,.avi,.m4v"
+                                            className="hidden"
+                                            onChange={handleImageUpload}
+                                            disabled={uploading}
+                                            multiple
+                                        />
+                                    </label>
+                                )}
                             </div>
 
                             <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-1">
                                 <p className="text-sm text-gray-700">
-                                    <strong>Images:</strong> JPG, PNG, WebP — min 1000×1000px on neutral backgrounds works best.
+                                    <strong>Images:</strong> JPG, PNG, WebP, GIF — min 1000×1000px works best. First item is the primary media.
                                 </p>
                                 <p className="text-sm text-gray-700">
-                                    <strong>Videos:</strong> MP4, WebM, MOV — auto-converted to AVIF/WebP isn&apos;t possible for video,
-                                    so upload a tightly trimmed clip (≤ 15 MB). Videos hover-preview here and autoplay muted on the product page.
+                                    <strong>Videos:</strong> MP4, WebM, MOV, AVI — up to <strong>50 MB</strong> each.
+                                    Prefer a short 720p MP4 (phone clips over 50 MB will be rejected). Hover to preview here;
+                                    videos autoplay muted on the product page.
                                 </p>
+                                {uploadStatus && !uploading && (
+                                    <p className="text-sm text-emerald-700 pt-1">
+                                        <i className="ri-check-line mr-1"></i>
+                                        {uploadStatus}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     )}
