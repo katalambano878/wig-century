@@ -405,25 +405,25 @@ export async function sendWelcomeMessage(user: { email: string, firstName: strin
   <p style="margin:0;color:#6b7280;font-size:15px;">We're so glad you're here.</p>
 </div>
 
-<p style="color:#374151;font-size:14px;line-height:1.7;margin:16px 0;">Thank you for joining the ${BRAND.name} family. We offer carefully curated thrifted tops, authentic African print wears, watches, and sunglasses at unbeatable prices &mdash; fashion that speaks for itself.</p>
+<p style="color:#374151;font-size:14px;line-height:1.7;margin:16px 0;">Thank you for joining ${BRAND.name}. Browse lace fronts, bundles, and closures, save your details, and check out whenever you are ready.</p>
 
 <div style="background-color:#f9fafb;border-radius:12px;padding:20px;margin:20px 0;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
     <tr>
       <td style="text-align:center;padding:8px;width:33%;">
-        <p style="font-size:20px;margin:0 0 4px;">&#128248;</p>
-        <p style="color:#374151;font-size:12px;font-weight:600;margin:0;">Thrifted Finds</p>
-        <p style="color:#9ca3af;font-size:11px;margin:2px 0 0;">Hand-picked tops</p>
+        <p style="font-size:20px;margin:0 0 4px;">&#128087;</p>
+        <p style="color:#374151;font-size:12px;font-weight:600;margin:0;">Wigs</p>
+        <p style="color:#9ca3af;font-size:11px;margin:2px 0 0;">Lace fronts and closures</p>
       </td>
       <td style="text-align:center;padding:8px;width:33%;">
-        <p style="font-size:20px;margin:0 0 4px;">&#127774;</p>
-        <p style="color:#374151;font-size:12px;font-weight:600;margin:0;">African Prints</p>
-        <p style="color:#9ca3af;font-size:11px;margin:2px 0 0;">Authentic wears</p>
+        <p style="font-size:20px;margin:0 0 4px;">&#128722;</p>
+        <p style="color:#374151;font-size:12px;font-weight:600;margin:0;">Easy checkout</p>
+        <p style="color:#9ca3af;font-size:11px;margin:2px 0 0;">Card or mobile money</p>
       </td>
       <td style="text-align:center;padding:8px;width:33%;">
-        <p style="font-size:20px;margin:0 0 4px;">&#128176;</p>
-        <p style="color:#374151;font-size:12px;font-weight:600;margin:0;">Best Prices</p>
-        <p style="color:#9ca3af;font-size:11px;margin:2px 0 0;">Unbeatable value</p>
+        <p style="font-size:20px;margin:0 0 4px;">&#128230;</p>
+        <p style="color:#374151;font-size:12px;font-weight:600;margin:0;">Order updates</p>
+        <p style="color:#9ca3af;font-size:11px;margin:2px 0 0;">Email when status changes</p>
       </td>
     </tr>
   </table>

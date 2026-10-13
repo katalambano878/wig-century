@@ -153,31 +153,46 @@ export async function POST(
       `SELECT id FROM auth.users WHERE lower(email) = $1 AND deleted_at IS NULL LIMIT 1`,
       [email]
     );
-    // Always 200 so we don't reveal whether the account exists.
     if (rows[0] && process.env.RESEND_API_KEY) {
       const { SignJWT } = await import("jose");
       const { authJwtSecret } = await import("@/lib/db/mode");
       const now = Math.floor(Date.now() / 1000);
-      const token = await new SignJWT({ typ: "recovery", email })
+      const secret = new TextEncoder().encode(authJwtSecret());
+      const access = await new SignJWT({
+        aud: "authenticated",
+        role: "authenticated",
+        email,
+        app_metadata: { role: "customer" },
+      })
         .setProtectedHeader({ alg: "HS256", typ: "JWT" })
         .setSubject(rows[0].id)
         .setIssuedAt(now)
         .setExpirationTime(now + 60 * 60)
-        .sign(new TextEncoder().encode(authJwtSecret()));
+        .sign(secret);
+      const refresh = await new SignJWT({ typ: "refresh" })
+        .setProtectedHeader({ alg: "HS256", typ: "JWT" })
+        .setSubject(rows[0].id)
+        .setIssuedAt(now)
+        .setExpirationTime(now + 60 * 60)
+        .sign(secret);
       const origin = (
         process.env.NEXT_PUBLIC_APP_URL ||
         process.env.STORAGE_PUBLIC_URL ||
         "http://localhost:3000"
       ).replace(/\/+$/, "");
+      const link = `${origin}/auth/reset-password#access_token=${encodeURIComponent(access)}&refresh_token=${encodeURIComponent(refresh)}&type=recovery&expires_in=3600`;
       const { Resend } = await import("resend");
       const resend = new Resend(process.env.RESEND_API_KEY);
       const from = process.env.EMAIL_FROM || "Wig Century <noreply@wigcentury.com>";
-      await resend.emails.send({
+      const sent = await resend.emails.send({
         from,
         to: email,
         subject: "Reset your Wig Century password",
-        html: `<p>Reset your password using this link. It expires in one hour.</p><p><a href="${origin}/auth/reset-password?token=${encodeURIComponent(token)}">${origin}/auth/reset-password</a></p>`,
+        html: `<p>We received a request to reset your Wig Century password.</p><p><a href="${link}">Choose a new password</a></p><p>This link expires in one hour. If you did not ask for this, you can ignore the email.</p>`,
       });
+      if (sent.error) console.error("[auth/recover] email failed:", sent.error.message);
+    } else if (rows[0]) {
+      console.warn("[auth/recover] RESEND_API_KEY is not set; reset email was not sent");
     }
     return NextResponse.json({}, { status: 200, headers: cors() });
   }

@@ -201,28 +201,42 @@ export async function signUpWithPassword(opts: {
   const id = randomUUID();
   const hash = bcrypt.hashSync(opts.password, 10);
   const meta = opts.data || {};
+  const first = typeof meta.first_name === "string" ? meta.first_name.trim() : "";
+  const last = typeof meta.last_name === "string" ? meta.last_name.trim() : "";
+  const fullName = [first, last].filter(Boolean).join(" ") || email.split("@")[0];
+  const phone = typeof meta.phone === "string" ? meta.phone.trim() : "";
 
   await query(
     `INSERT INTO auth.users (
-       id, instance_id, aud, role, email, encrypted_password,
+       id, aud, role, email, phone, encrypted_password,
        email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
-       created_at, updated_at, confirmation_token, recovery_token,
-       email_change_token_new, email_change
+       created_at, updated_at
      ) VALUES (
-       $1, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-       $2, $3, now(), '{"provider":"email","providers":["email"]}'::jsonb, $4::jsonb,
-       now(), now(), '', '', '', ''
+       $1, 'authenticated', 'authenticated',
+       $2, NULLIF($3, ''), $4, now(),
+       '{"provider":"email","providers":["email"]}'::jsonb, $5::jsonb,
+       now(), now()
      )`,
-    [id, email, hash, JSON.stringify(meta)]
+    [id, email, phone, hash, JSON.stringify(meta)]
   );
 
-  // Ensure profile row exists (app expects profiles.id = auth.users.id)
   await query(
-    `INSERT INTO profiles (id, email, full_name, role, created_at, updated_at)
-     VALUES ($1, $2, $3, 'customer', now(), now())
-     ON CONFLICT (id) DO NOTHING`,
-    [id, email, (meta.full_name as string) || email.split("@")[0]]
-  ).catch(() => {});
+    `INSERT INTO profiles (id, email, full_name, phone, role, preferences, created_at, updated_at)
+     VALUES ($1, $2, $3, NULLIF($4, ''), 'customer', $5::jsonb, now(), now())
+     ON CONFLICT (id) DO UPDATE SET
+       email = EXCLUDED.email,
+       full_name = EXCLUDED.full_name,
+       phone = COALESCE(EXCLUDED.phone, profiles.phone),
+       preferences = COALESCE(profiles.preferences, '{}'::jsonb) || EXCLUDED.preferences,
+       updated_at = now()`,
+    [
+      id,
+      email,
+      fullName,
+      phone,
+      JSON.stringify({ newsletter: meta.newsletter === true }),
+    ]
+  );
 
   const { rows } = await query(`SELECT * FROM auth.users WHERE id = $1`, [id]);
   const session = await mintSession(rows[0]);
@@ -279,23 +293,31 @@ export async function updateUserMetadata(
   await query(
     `UPDATE auth.users
      SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || $1::jsonb,
+         phone = COALESCE(NULLIF($2, ''), phone),
          updated_at = now()
-     WHERE id = $2`,
-    [JSON.stringify(data), userId]
+     WHERE id = $3`,
+    [
+      JSON.stringify(data),
+      typeof data.phone === "string" ? data.phone.trim() : "",
+      userId,
+    ]
   );
-  if (typeof data.full_name === "string" || typeof data.phone === "string") {
+  const first = typeof data.first_name === "string" ? data.first_name.trim() : "";
+  const last = typeof data.last_name === "string" ? data.last_name.trim() : "";
+  const combined = [first, last].filter(Boolean).join(" ");
+  const fullName =
+    typeof data.full_name === "string" && data.full_name.trim()
+      ? data.full_name.trim()
+      : combined;
+  if (fullName || typeof data.phone === "string") {
     await query(
       `UPDATE profiles SET
-         full_name = COALESCE($1, full_name),
-         phone = COALESCE($2, phone),
+         full_name = COALESCE(NULLIF($1, ''), full_name),
+         phone = COALESCE(NULLIF($2, ''), phone),
          updated_at = now()
        WHERE id = $3`,
-      [
-        typeof data.full_name === "string" ? data.full_name : null,
-        typeof data.phone === "string" ? data.phone : null,
-        userId,
-      ]
-    ).catch(() => {});
+      [fullName, typeof data.phone === "string" ? data.phone.trim() : "", userId]
+    );
   }
   const user = await getUserById(userId);
   return { user, error: null };

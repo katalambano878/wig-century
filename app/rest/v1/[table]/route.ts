@@ -5,6 +5,21 @@ import {
 } from "@/lib/db/supabase-compat";
 import { isPlainPostgres } from "@/lib/db/mode";
 import { restWriteAllowed } from "@/lib/db/rest-guard";
+import { verifyAccessToken } from "@/lib/db/auth";
+
+async function addressFilterMatchesUser(req: NextRequest): Promise<NextResponse | null> {
+  const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
+  const verified = token ? await verifyAccessToken(token) : null;
+  const role = verified
+    ? String((verified.payload.app_metadata as { role?: string } | undefined)?.role || "")
+    : "";
+  if (role === "admin" || role === "staff") return null;
+  const filter = req.nextUrl.searchParams.get("user_id") || "";
+  if (!verified || filter !== `eq.${verified.userId}`) {
+    return jsonError("Not allowed", 403);
+  }
+  return null;
+}
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -105,6 +120,24 @@ export async function POST(
 
   const body = await req.json().catch(() => null);
   if (body == null) return jsonError("Invalid JSON body");
+  if (table === "addresses") {
+    const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
+    const { verifyAccessToken } = await import("@/lib/db/auth");
+    const verified = token ? await verifyAccessToken(token) : null;
+    const role = verified
+      ? String((verified.payload.app_metadata as { role?: string } | undefined)?.role || "")
+      : "";
+    if (role !== "admin" && role !== "staff") {
+      if (!verified) return jsonError("Not allowed", 401);
+      const stamp = (row: Record<string, unknown>) => ({ ...row, user_id: verified.userId });
+      if (Array.isArray(body)) {
+        for (const row of body) Object.assign(row, stamp(row));
+      } else if (typeof body === "object") {
+        Object.assign(body, stamp(body as Record<string, unknown>));
+      }
+    }
+  }
+  if (body == null) return jsonError("Invalid JSON body");
 
   const client = createClient();
   let qb = client.from(table).insert(body);
@@ -133,6 +166,10 @@ export async function PATCH(
   if (!PG_IDENT.test(table)) return jsonError("Invalid table");
   const gate = await restWriteAllowed("PATCH", table, req.headers.get("authorization"));
   if (!gate.ok) return jsonError(gate.message, gate.status);
+  if (table === "addresses") {
+    const denied = await addressFilterMatchesUser(req);
+    if (denied) return denied;
+  }
 
   const body = await req.json().catch(() => null);
   if (body == null || typeof body !== "object") return jsonError("Invalid JSON body");
@@ -162,6 +199,10 @@ export async function DELETE(
   if (!PG_IDENT.test(table)) return jsonError("Invalid table");
   const gate = await restWriteAllowed("DELETE", table, req.headers.get("authorization"));
   if (!gate.ok) return jsonError(gate.message, gate.status);
+  if (table === "addresses") {
+    const denied = await addressFilterMatchesUser(req);
+    if (denied) return denied;
+  }
 
   const client = createClient();
   let qb = client.from(table).delete();

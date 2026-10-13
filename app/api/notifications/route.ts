@@ -37,7 +37,7 @@ export async function POST(request: Request) {
         // 'order_created' requires a valid order to exist (verified below)
         // 'contact' is public but rate-limited
         // ============================================================
-        const adminOnlyTypes = ['campaign', 'order_updated', 'order_status', 'payment_link', 'welcome'];
+        const adminOnlyTypes = ['campaign', 'order_updated', 'order_status', 'payment_link'];
         const requiresAdminAuth = adminOnlyTypes.includes(type);
 
         if (requiresAdminAuth) {

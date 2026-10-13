@@ -1,7 +1,8 @@
 import { verifyAccessToken } from "./auth";
 
 const GUEST_INSERT = new Set(["orders", "order_items", "contact_submissions"]);
-const CUSTOMER_INSERT = new Set(["reviews", "review_images"]);
+const CUSTOMER_INSERT = new Set(["reviews", "review_images", "addresses"]);
+const CUSTOMER_WRITE = new Set(["addresses"]);
 
 export async function restWriteAllowed(
   method: string,
@@ -21,6 +22,9 @@ export async function restWriteAllowed(
     return { ok: true, status: 200, message: "" };
   }
   if (method === "POST" && verified && CUSTOMER_INSERT.has(table)) {
+    return { ok: true, status: 200, message: "" };
+  }
+  if ((method === "PATCH" || method === "DELETE") && verified && CUSTOMER_WRITE.has(table)) {
     return { ok: true, status: 200, message: "" };
   }
 
