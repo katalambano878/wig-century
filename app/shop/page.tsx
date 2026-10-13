@@ -115,12 +115,14 @@ function ShopContent() {
             if (selectedCategory !== 'all') {
               const categoryObj = categories.find((c: any) => c.slug === selectedCategory);
               if (categoryObj) {
-                const targetSlugs = [selectedCategory];
-                const childSlugs  = (categories as any[]).filter((c: any) => c.parent_id === categoryObj.id).map((c: any) => c.slug);
-                targetSlugs.push(...childSlugs);
-                query = query.in('categories.slug', targetSlugs);
+                const targetIds = [categoryObj.id];
+                const childIds = (categories as any[])
+                  .filter((c: any) => c.parent_id === categoryObj.id)
+                  .map((c: any) => c.id);
+                targetIds.push(...childIds);
+                query = query.in('category_id', targetIds);
               } else {
-                query = query.eq('categories.slug', selectedCategory);
+                query = query.eq('category_id', '00000000-0000-0000-0000-000000000000');
               }
             }
 

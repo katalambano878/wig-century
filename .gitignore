@@ -30,3 +30,7 @@ yarn-error.log*
 
 # Vercel
 .vercel
+
+# Migration dumps (contain customer data and password hashes)
+migration-artifacts/dumps/
+migration-artifacts/storage/

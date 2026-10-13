@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import {
   buildMetadata,
   productJsonLd,
@@ -9,20 +9,25 @@ import {
 } from '@/lib/seo';
 import ProductDetailClient from './ProductDetailClient';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
 async function fetchProduct(slug: string) {
   try {
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    const { data } = await supabase
+    const { data } = await supabaseAdmin
       .from('products')
       .select(
-        'id, name, slug, description, short_description, price, sale_price, sku, status, image_urls, stock_quantity, category:categories(name, slug)'
+        'id, name, slug, description, short_description, price, sale_price, sku, status, quantity, categories(name, slug), product_images(url, position)'
       )
       .eq('slug', slug)
       .maybeSingle();
-    return data;
+    if (!data) return null;
+    const images = Array.isArray(data.product_images)
+      ? [...data.product_images].sort((a: { position?: number }, b: { position?: number }) => (a.position ?? 0) - (b.position ?? 0))
+      : [];
+    return {
+      ...data,
+      image_urls: images.map((img: { url?: string }) => img.url).filter(Boolean),
+      stock_quantity: data.quantity ?? 0,
+      category: Array.isArray(data.categories) ? data.categories[0] : data.categories,
+    };
   } catch (err) {
     console.error('[product metadata] fetch failed', err);
     return null;

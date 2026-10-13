@@ -10,6 +10,21 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: 'wigcentury-staging.169-58-8-203.sslip.io',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'wigcentury.com',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.wigcentury.com',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'https',
         hostname: '*.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },

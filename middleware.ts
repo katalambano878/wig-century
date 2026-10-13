@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { jwtVerify } from 'jose';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const usePlainPg = process.env.NEXT_PUBLIC_USE_PLAIN_PG === 'true';
 
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
@@ -65,10 +67,39 @@ export async function middleware(request: NextRequest) {
         }
 
         if (!token) {
-            // No auth token found — redirect to login
             const loginUrl = new URL('/admin/login', request.url);
             loginUrl.searchParams.set('redirect', pathname);
             return NextResponse.redirect(loginUrl);
+        }
+
+        if (usePlainPg) {
+            const secret =
+                process.env.AUTH_JWT_SECRET ||
+                process.env.JWT_SECRET ||
+                process.env.SUPABASE_JWT_SECRET;
+            if (!secret) {
+                const loginUrl = new URL('/admin/login', request.url);
+                loginUrl.searchParams.set('error', 'session_expired');
+                return NextResponse.redirect(loginUrl);
+            }
+            try {
+                const { payload } = await jwtVerify(token, new TextEncoder().encode(secret));
+                if (payload.typ === 'refresh') throw new Error('refresh');
+                const role = (payload.app_metadata as { role?: string } | undefined)?.role;
+                if (role !== 'admin' && role !== 'staff') {
+                    const loginUrl = new URL('/admin/login', request.url);
+                    loginUrl.searchParams.set('error', 'unauthorized');
+                    return NextResponse.redirect(loginUrl);
+                }
+                if (typeof payload.sub === 'string') response.headers.set('x-user-id', payload.sub);
+                if (role) response.headers.set('x-user-role', role);
+            } catch {
+                const loginUrl = new URL('/admin/login', request.url);
+                loginUrl.searchParams.set('redirect', pathname);
+                loginUrl.searchParams.set('error', 'session_expired');
+                return NextResponse.redirect(loginUrl);
+            }
+            return response;
         }
 
         // Verify the token is valid and user has admin/staff role

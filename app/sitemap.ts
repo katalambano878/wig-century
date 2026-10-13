@@ -1,11 +1,8 @@
 import type { MetadataRoute } from 'next';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { SITE } from '@/lib/seo';
 
 export const revalidate = 3600;
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 type Entry = MetadataRoute.Sitemap[number];
 
@@ -33,15 +30,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let categoryPages: Entry[] = [];
 
   try {
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
     const [{ data: products }, { data: categories }] = await Promise.all([
       supabase.from('products').select('slug, updated_at').eq('status', 'active'),
       supabase.from('categories').select('slug, updated_at').eq('status', 'active'),
     ]);
 
     if (products?.length) {
-      productPages = products.map((p) => ({
+      productPages = products.map((p: { slug: string; updated_at: string | null }) => ({
         url: url(`/product/${p.slug}`),
         lastModified: p.updated_at ? new Date(p.updated_at) : now,
         changeFrequency: 'weekly',
@@ -50,7 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     if (categories?.length) {
-      categoryPages = categories.map((c) => ({
+      categoryPages = categories.map((c: { slug: string; updated_at: string | null }) => ({
         url: url(`/category/${c.slug}`),
         lastModified: c.updated_at ? new Date(c.updated_at) : now,
         changeFrequency: 'weekly',
