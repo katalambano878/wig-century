@@ -94,7 +94,7 @@ export default function AdminCategoriesPage() {
         .from('products')
         .getPublicUrl(filePath);
 
-      setFormData({ ...formData, image_url: publicUrl });
+      setFormData((prev) => ({ ...prev, image_url: publicUrl }));
 
     } catch (error: any) {
       alert('Error uploading image: ' + error.message);
@@ -304,7 +304,10 @@ export default function AdminCategoriesPage() {
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) => {
+                      const name = e.target.value;
+                      setFormData((prev) => ({ ...prev, name }));
+                    }}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500"
                     placeholder="Enter category name"
                   />
