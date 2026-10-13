@@ -5,6 +5,50 @@ import Image from 'next/image';
 
 const VIDEO_EXTENSIONS = ['.mov', '.mp4', '.webm', '.avi', '.m4v', '.ogg'];
 
+// Phones share a small pipe. Let two on-screen videos buffer their first
+// frame, then start the next. Desktop starts every visible video at once.
+const MOBILE_PARALLEL_STARTS = 2;
+const mobileWaiters: Array<() => void> = [];
+let mobileActiveStarts = 0;
+
+function isMobileViewport() {
+  return window.matchMedia('(max-width: 767px)').matches;
+}
+
+function scheduleVideoStart(task: (releaseSlot: () => void) => void): () => void {
+  if (!isMobileViewport()) {
+    task(() => {});
+    return () => {};
+  }
+
+  let started = false;
+  let released = false;
+  const releaseSlot = () => {
+    if (!started || released) return;
+    released = true;
+    mobileActiveStarts = Math.max(0, mobileActiveStarts - 1);
+    const next = mobileWaiters.shift();
+    next?.();
+  };
+  const run = () => {
+    started = true;
+    mobileActiveStarts += 1;
+    task(releaseSlot);
+  };
+
+  if (mobileActiveStarts < MOBILE_PARALLEL_STARTS) run();
+  else mobileWaiters.push(run);
+
+  return () => {
+    const queuedAt = mobileWaiters.indexOf(run);
+    if (queuedAt >= 0) {
+      mobileWaiters.splice(queuedAt, 1);
+      return;
+    }
+    releaseSlot();
+  };
+}
+
 export function isVideoUrl(url: string): boolean {
   if (!url) return false;
   try {
@@ -44,7 +88,8 @@ export default function LazyImage({
 }: LazyImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const [shouldLoad, setShouldLoad] = useState(false);
+  const [inView, setInView] = useState(false);
   const [autoplayFailed, setAutoplayFailed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -62,45 +107,71 @@ export default function LazyImage({
 
   const isVideo = src ? isVideoUrl(src) : false;
 
-  // Lazy-mount the <video> only when it enters the viewport (with 200px lead).
+  // Mount a video once it is near the screen. Keep watching so off-screen
+  // videos can pause instead of downloading in the background.
   useEffect(() => {
     if (!isVideo || !containerRef.current) return;
-    if (priority) {
-      setIsVisible(true);
-      return;
-    }
+    if (priority) setShouldLoad(true);
+    const mobile = window.matchMedia('(max-width: 767px)').matches;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
+        if (entry.isIntersecting) setShouldLoad(true);
+        setInView(entry.isIntersecting);
       },
-      { rootMargin: '200px' },
+      { rootMargin: mobile ? '40px' : '240px', threshold: mobile ? 0.2 : 0.01 },
     );
     observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, [isVideo, priority]);
 
-  // Autoplay (muted), with a fallback tap-to-play if the browser blocks it.
+  // Mobile Safari will not fetch the picture until play() is called, and it
+  // will not fire canplay while preload is only metadata. Start playback as
+  // soon as the card is on screen.
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !isVisible || !autoPlay) return;
-
-    const tryPlay = () => {
-      const p = video.play();
-      if (p !== undefined) {
-        p.catch(() => setAutoplayFailed(true));
-      }
-    };
-
-    if (video.readyState >= 2) {
-      tryPlay();
-    } else {
-      video.addEventListener('canplay', tryPlay, { once: true });
-      return () => video.removeEventListener('canplay', tryPlay);
+    if (!video || !shouldLoad) return;
+    if (!inView || !autoPlay) {
+      video.pause();
+      return;
     }
-  }, [isVisible, src, autoPlay]);
+
+    const show = () => setIsLoaded(true);
+    video.addEventListener('loadeddata', show);
+    video.addEventListener('playing', show);
+
+    let releaseFirstFrame = () => {};
+    const cancel = scheduleVideoStart((releaseSlot) => {
+      releaseFirstFrame = releaseSlot;
+      video.muted = true;
+      video.defaultMuted = true;
+      video.playsInline = true;
+      video.setAttribute('playsinline', '');
+      video.setAttribute('webkit-playsinline', 'true');
+      video.preload = 'auto';
+      video.addEventListener('loadeddata', releaseSlot);
+      video.addEventListener('playing', releaseSlot);
+      video.addEventListener('error', releaseSlot);
+      const pending = video.play();
+      if (pending) {
+        pending.catch(() => {
+          setAutoplayFailed(true);
+          setIsLoaded(true);
+          releaseSlot();
+        });
+      }
+    });
+
+    return () => {
+      cancel();
+      releaseFirstFrame();
+      video.removeEventListener('loadeddata', show);
+      video.removeEventListener('playing', show);
+      video.removeEventListener('loadeddata', releaseFirstFrame);
+      video.removeEventListener('playing', releaseFirstFrame);
+      video.removeEventListener('error', releaseFirstFrame);
+      video.pause();
+    };
+  }, [shouldLoad, inView, src, autoPlay]);
 
   const handleTapPlay = useCallback(() => {
     const video = videoRef.current;
@@ -141,7 +212,7 @@ export default function LazyImage({
         {!isLoaded && (
           <div className="absolute inset-0 bg-gray-200 animate-pulse z-10"></div>
         )}
-        {isVisible && (
+        {shouldLoad && (
           <video
             ref={videoRef}
             src={src}
@@ -150,7 +221,7 @@ export default function LazyImage({
             loop
             playsInline
             controls={videoControls}
-            preload="metadata"
+            preload="none"
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
               isLoaded ? 'opacity-100' : 'opacity-0'
             }`}
@@ -158,9 +229,14 @@ export default function LazyImage({
             onError={handleError}
           />
         )}
-        {isLoaded && autoplayFailed && (
+        {autoplayFailed && (
           <button
-            onClick={handleTapPlay}
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              handleTapPlay();
+            }}
             className="absolute inset-0 z-10 flex items-center justify-center bg-black/20"
             aria-label="Play video"
           >

@@ -77,7 +77,7 @@ export default function QuickViewModal({ product, isOpen, onClose }: QuickViewMo
                       loop
                       playsInline
                       controls
-                      preload="metadata"
+                      preload="auto"
                     />
                   ) : (
                     <Image
