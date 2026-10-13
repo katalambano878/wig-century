@@ -153,7 +153,7 @@ export async function POST(
       `SELECT id FROM auth.users WHERE lower(email) = $1 AND deleted_at IS NULL LIMIT 1`,
       [email]
     );
-    if (rows[0] && process.env.RESEND_API_KEY) {
+    if (rows[0] && process.env.POSTAL_API_KEY) {
       const { SignJWT } = await import("jose");
       const { authJwtSecret } = await import("@/lib/db/mode");
       const now = Math.floor(Date.now() / 1000);
@@ -181,18 +181,15 @@ export async function POST(
         "http://localhost:3000"
       ).replace(/\/+$/, "");
       const link = `${origin}/auth/reset-password#access_token=${encodeURIComponent(access)}&refresh_token=${encodeURIComponent(refresh)}&type=recovery&expires_in=3600`;
-      const { Resend } = await import("resend");
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      const from = process.env.EMAIL_FROM || "Wig Century <noreply@wigcentury.com>";
-      const sent = await resend.emails.send({
-        from,
+      const { sendEmail } = await import("@/lib/notifications");
+      const sent = await sendEmail({
         to: email,
         subject: "Reset your Wig Century password",
         html: `<p>We received a request to reset your Wig Century password.</p><p><a href="${link}">Choose a new password</a></p><p>This link expires in one hour. If you did not ask for this, you can ignore the email.</p>`,
       });
-      if (sent.error) console.error("[auth/recover] email failed:", sent.error.message);
+      if (!sent) console.error("[auth/recover] password reset email was not sent");
     } else if (rows[0]) {
-      console.warn("[auth/recover] RESEND_API_KEY is not set; reset email was not sent");
+      console.warn("[auth/recover] POSTAL_API_KEY is not set; reset email was not sent");
     }
     return NextResponse.json({}, { status: 200, headers: cors() });
   }
