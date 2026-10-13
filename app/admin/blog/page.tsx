@@ -258,9 +258,14 @@ export default function AdminBlogPage() {
                     >
                       Edit Post
                     </Link>
-                    <button className="w-9 h-9 flex items-center justify-center border-2 border-gray-300 text-gray-700 hover:border-slate-600 hover:text-slate-600 rounded-lg transition-colors">
+                    <Link
+                      href={`/blog/${post.id}`}
+                      target="_blank"
+                      className="w-9 h-9 flex items-center justify-center border-2 border-gray-300 text-gray-700 hover:border-slate-600 hover:text-slate-600 rounded-lg transition-colors"
+                      title="View on site"
+                    >
                       <i className="ri-eye-line"></i>
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -329,9 +334,14 @@ export default function AdminBlogPage() {
                         >
                           <i className="ri-edit-line text-lg"></i>
                         </Link>
-                        <button className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors">
+                        <Link
+                          href={`/blog/${post.id}`}
+                          target="_blank"
+                          className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
+                          title="View on site"
+                        >
                           <i className="ri-eye-line text-lg"></i>
-                        </button>
+                        </Link>
                         <button className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors">
                           <i className="ri-delete-bin-line text-lg"></i>
                         </button>

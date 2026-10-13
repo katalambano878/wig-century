@@ -47,7 +47,7 @@ export default function ProductSalesStats({ isOpen, onClose }: { isOpen: boolean
 
         try {
             // We fetch order_items and filter by the parent order's created_at
-            let query = supabase
+            const { data, error } = await supabase
                 .from('order_items')
                 .select(`
           quantity,
@@ -55,7 +55,7 @@ export default function ProductSalesStats({ isOpen, onClose }: { isOpen: boolean
           product_id,
           variant_name,
           total_price,
-          orders!inner (
+          orders (
             id,
             created_at,
             status,
@@ -63,21 +63,20 @@ export default function ProductSalesStats({ isOpen, onClose }: { isOpen: boolean
           )
         `);
 
-            // Only include paid orders (confirmed) and exclude cancelled
-            query = query.eq('orders.payment_status', 'paid').neq('orders.status', 'cancelled');
-
-            if (startDate) {
-                query = query.gte('orders.created_at', startDate);
-            }
-
-            const { data, error } = await query;
-
             if (error) throw error;
 
-            if (data) {
+            const startMs = startDate ? new Date(startDate).getTime() : null;
+            const rows = (data || []).filter((item: any) => {
+                const order = item.orders;
+                if (!order || order.payment_status !== 'paid' || order.status === 'cancelled') return false;
+                if (startMs !== null && new Date(order.created_at).getTime() < startMs) return false;
+                return true;
+            });
+
+            if (rows.length) {
                 const map = new Map<string, SalesStat>();
 
-                data.forEach((item: any) => {
+                rows.forEach((item: any) => {
                     const pid = item.product_id || item.product_name;
 
                     if (!map.has(pid)) {
@@ -121,6 +120,8 @@ export default function ProductSalesStats({ isOpen, onClose }: { isOpen: boolean
                     .sort((a, b) => b.itemsSold - a.itemsSold);
 
                 setStats(result);
+            } else {
+                setStats([]);
             }
         } catch (err) {
             console.error('Error fetching product stats:', err);

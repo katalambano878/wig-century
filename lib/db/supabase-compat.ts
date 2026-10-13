@@ -564,7 +564,7 @@ class QueryBuilder implements PromiseLike<{ data: any; error: any; count: number
             params
           );
           rows = res.rows;
-          await this.resolveEmbeds(rows, parsed);
+          await this.resolveEmbeds(rows, parsed, this.table);
         }
       } else if (this.action === "insert" || this.action === "upsert") {
         rows = await this.execInsert(pool);
@@ -632,31 +632,30 @@ class QueryBuilder implements PromiseLike<{ data: any; error: any; count: number
     return Array.from(cols).join(", ");
   }
 
-  private async resolveEmbeds(rows: Row[], parsed: ParsedSelect): Promise<void> {
+  private async resolveEmbeds(rows: Row[], parsed: ParsedSelect, ownerTable: string): Promise<void> {
     if (rows.length === 0 || parsed.embeds.length === 0) return;
     const pool = getPool();
     for (const embed of parsed.embeds) {
-      // If no explicit FK column, decide direction from the FK map: an edge
-      // from THIS table to the embed table means forward (object); otherwise
-      // it's a reverse has-many (array).
+      // Direction is decided from the row's own table, not the top-level
+      // query. Nested embeds (order_items -> products -> categories) used to
+      // keep looking up foreign keys on the outermost table and then query
+      // a column that does not exist.
       let fk = embed.fkColumn;
       let embedTable = embed.table;
       if (fk) {
-        // fk-column form: prefer the owning table's own FK edge to disambiguate
-        // (template_id -> sms_templates vs email_templates depends on the table)
-        const own = (FK_MAP[this.table] || []).find((e) => e.column === fk);
+        const own = (FK_MAP[ownerTable] || []).find((e) => e.column === fk);
         if (own) embedTable = own.foreignTable;
       } else {
-        const fwd = (FK_MAP[this.table] || []).find((e) => e.foreignTable === embed.table);
+        const fwd = (FK_MAP[ownerTable] || []).find((e) => e.foreignTable === embed.table);
         if (fwd) fk = fwd.column;
       }
       if (fk) {
-        // forward embed: current.fk -> related.id  (object)
         const ids = Array.from(
           new Set(rows.map((r) => r[fk]).filter((v) => v !== null && v !== undefined))
         );
         const wantId = embedWantsId(embed.select);
-        const innerCols = this.embedColumns(embed.select);
+        const joinCols = this.foreignKeyColumns(embedTable, embed.select);
+        const innerCols = this.embedColumns(embed.select, joinCols);
         let related: Row[] = [];
         if (ids.length) {
           const ph = ids.map((_, i) => `$${i + 1}`).join(",");
@@ -667,31 +666,37 @@ class QueryBuilder implements PromiseLike<{ data: any; error: any; count: number
           related = res.rows;
         }
         const byId = new Map(related.map((r) => [r.id, r]));
-        // resolve nested embeds
-        await this.resolveEmbeds(related, embed.select);
-        // PostgREST only returns requested columns — drop the join-only id
-        if (!wantId) for (const r of related) delete r.id;
+        await this.resolveEmbeds(related, embed.select, embedTable);
+        this.stripJoinColumns(related, embed.select, joinCols, wantId);
         for (const r of rows) {
           r[embed.alias] = byId.get(r[fk]) ?? null;
         }
       } else {
-        // reverse embed (has-many): related.<table>_fk -> current.id (array)
-        const edge = this.findReverseEdge(embedTable);
-        const fkCol = edge?.column ?? `${singularize(this.table)}_id`;
+        const edge = this.findReverseEdge(embedTable, ownerTable);
+        const fkCol = edge?.column ?? `${singularize(ownerTable)}_id`;
         const parentIds = Array.from(new Set(rows.map((r) => r.id).filter(Boolean)));
+        if (this.isCountEmbed(embed.select)) {
+          const counts = new Map<unknown, number>();
+          if (parentIds.length) {
+            const ph = parentIds.map((_, i) => `$${i + 1}`).join(",");
+            const res = await pool.query(
+              `SELECT ${ident(fkCol)} AS parent_id, count(*)::int AS count FROM ${ident(embedTable)} WHERE ${ident(fkCol)} IN (${ph}) GROUP BY ${ident(fkCol)}`,
+              parentIds
+            );
+            for (const row of res.rows) counts.set(row.parent_id, row.count);
+          }
+          for (const r of rows) {
+            r[embed.alias] = [{ count: counts.get(r.id) ?? 0 }];
+          }
+          continue;
+        }
         const wantId = embedWantsId(embed.select);
         const wantFk = embed.select.star || embed.select.columns.includes(fkCol);
-        const innerCols = this.embedColumns(embed.select, fkCol);
+        const joinCols = this.foreignKeyColumns(embedTable, embed.select);
+        const innerCols = this.embedColumns(embed.select, [fkCol, ...joinCols]);
         let related: Row[] = [];
         if (parentIds.length) {
           const ph = parentIds.map((_, i) => `$${i + 1}`).join(",");
-          // Prefer stable gallery order when the embedded table has a
-          // `position` column (allowlist) and either (a) position is
-          // explicitly selected or (b) the caller used `*` and this table
-          // is known to use position for sorting. Tables not in the
-          // allowlist (e.g. product_variants) must NOT get an auto
-          // `ORDER BY position` — that raises
-          // `column "position" does not exist` and bubbles up as a 400.
           const explicitPosition = embed.select.columns.includes("position");
           const starWithPosition =
             embed.select.star && TABLES_WITH_POSITION_COLUMN.has(embedTable);
@@ -705,13 +710,13 @@ class QueryBuilder implements PromiseLike<{ data: any; error: any; count: number
           );
           related = res.rows;
         }
-        await this.resolveEmbeds(related, embed.select);
-        const grouped = new Map<any, Row[]>();
+        await this.resolveEmbeds(related, embed.select, embedTable);
+        const grouped = new Map<unknown, Row[]>();
         for (const r of related) {
           const k = r[fkCol];
           if (!grouped.has(k)) grouped.set(k, []);
           if (!wantFk) delete r[fkCol];
-          if (!wantId) delete r.id;
+          this.stripJoinColumns([r], embed.select, joinCols, wantId);
           grouped.get(k)!.push(r);
         }
         for (const r of rows) r[embed.alias] = grouped.get(r.id) ?? [];
@@ -719,19 +724,55 @@ class QueryBuilder implements PromiseLike<{ data: any; error: any; count: number
     }
   }
 
-  private embedColumns(parsed: ParsedSelect, extraFk?: string): string {
+  /** PostgREST `related(count)` — an aggregate, not a column named count. */
+  private isCountEmbed(parsed: ParsedSelect): boolean {
+    return !parsed.star && parsed.embeds.length === 0 && parsed.columns.length === 1 && parsed.columns[0] === "count";
+  }
+
+  private foreignKeyColumns(ownerTable: string, parsed: ParsedSelect): string[] {
+    const cols: string[] = [];
+    for (const embed of parsed.embeds) {
+      if (embed.fkColumn) {
+        cols.push(embed.fkColumn);
+        continue;
+      }
+      const fwd = (FK_MAP[ownerTable] || []).find((edge) => edge.foreignTable === embed.table);
+      if (fwd) cols.push(fwd.column);
+    }
+    return cols;
+  }
+
+  private stripJoinColumns(rows: Row[], parsed: ParsedSelect, joinCols: string[], wantId: boolean): void {
+    for (const row of rows) {
+      if (!wantId) delete row.id;
+      if (parsed.star) continue;
+      for (const col of joinCols) {
+        if (!parsed.columns.includes(col)) delete row[col];
+      }
+    }
+  }
+
+  private embedColumns(parsed: ParsedSelect, extra?: string | string[]): string {
+    const extras = (Array.isArray(extra) ? extra : extra ? [extra] : []).filter(
+      (col) => typeof col === "string" && PG_IDENT.test(col)
+    );
     if (parsed.star && parsed.columns.length === 0) return "*";
     const cols = new Set<string>();
     if (parsed.star) cols.add("*");
-    for (const c of parsed.columns) cols.add(ident(c));
+    for (const col of parsed.columns) {
+      if (col === "count") continue;
+      cols.add(ident(col));
+    }
     cols.add(ident("id"));
-    if (extraFk) cols.add(ident(extraFk));
-    for (const e of parsed.embeds) if (e.fkColumn) cols.add(ident(e.fkColumn));
+    for (const col of extras) cols.add(ident(col));
+    for (const embed of parsed.embeds) {
+      if (embed.fkColumn && PG_IDENT.test(embed.fkColumn)) cols.add(ident(embed.fkColumn));
+    }
     return Array.from(cols).join(", ");
   }
 
-  private findReverseEdge(relatedTable: string): FkEdge | undefined {
-    return (FK_MAP[relatedTable] || []).find((e) => e.foreignTable === this.table);
+  private findReverseEdge(relatedTable: string, ownerTable: string): FkEdge | undefined {
+    return (FK_MAP[relatedTable] || []).find((e) => e.foreignTable === ownerTable);
   }
 
   private async execInsert(pool: ReturnType<typeof getPool>): Promise<Row[]> {
@@ -999,9 +1040,11 @@ export function applyPostgrestParams(
       continue;
     }
     if (key === "order") {
+      if (!raw.trim()) continue;
       for (const part of raw.split(",")) {
         const bits = part.trim().split(".");
         const col = bits[0];
+        if (!col || !PG_IDENT.test(col)) continue;
         const ascending = bits[1] !== "desc";
         const nullsFirst = bits.includes("nullsfirst");
         qb.order(col, { ascending, nullsFirst });
