@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { SmsCreditDashboardCard } from '@/components/admin/SmsCreditDashboardCard';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -333,6 +334,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
+        <SmsCreditDashboardCard />
         <main className="p-4 lg:p-6">
           {children}
         </main>
