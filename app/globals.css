@@ -1,4 +1,10 @@
 @import url('https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.5.0/remixicon.min.css');
+:root {
+  --font-outfit: "Outfit", system-ui, sans-serif;
+  --font-playfair: "Playfair Display", serif;
+  --font-pacifico: "Pacifico", cursive;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

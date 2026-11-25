@@ -1,15 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Pacifico, Playfair_Display, Outfit } from "next/font/google";
 import { CartProvider } from "@/context/CartContext";
 import { WishlistProvider } from "@/context/WishlistContext";
 import StoreLayoutShell from "@/components/StoreLayoutShell";
 import { SITE, buildMetadata, organizationJsonLd, websiteJsonLd, jsonLdScript } from "@/lib/seo";
 import "./globals.css";
-
-const pacifico = Pacifico({ weight: '400', subsets: ['latin'], variable: '--font-pacifico' });
-const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' });
-const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' });
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -87,6 +82,10 @@ export default function RootLayout({
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Pacifico&family=Playfair+Display:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://www.google.com" />
 
@@ -122,7 +121,7 @@ export default function RootLayout({
       )}
 
       <body
-        className={`antialiased overflow-x-hidden pwa-body ${pacifico.variable} ${playfair.variable} ${outfit.variable} font-sans`}
+        className="antialiased overflow-x-hidden pwa-body font-sans"
         style={{ fontFamily: 'var(--font-outfit), system-ui, sans-serif' }}
       >
         <a
